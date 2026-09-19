@@ -1,0 +1,24 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Choose the TAPE LIGHTS controller to add.",
+        "data": { "address": "Device" }
+      },
+      "confirm": {
+        "description": "Set up {name} ({address})?"
+      }
+    },
+    "abort": {
+      "already_configured": "This controller is already configured.",
+      "no_devices_found": "No TAPE LIGHTS controller found. Power it on and close the Rhythm Pro app so it advertises."
+    }
+  },
+  "entity": {
+    "number": {
+      "effect_speed": { "name": "Effect speed" },
+      "mic_sensitivity": { "name": "Microphone sensitivity" }
+    }
+  }
+}

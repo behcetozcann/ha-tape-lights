@@ -1,0 +1,19 @@
+{
+  "domain": "tape_lights",
+  "name": "TAPE LIGHTS (Rhythm Pro)",
+  "bluetooth": [
+    {
+      "local_name": "TAPE LIGHTS",
+      "connectable": true
+    }
+  ],
+  "codeowners": ["@behcetozcann"],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "https://github.com/behcetozcann/ha-tape-lights",
+  "integration_type": "device",
+  "iot_class": "assumed_state",
+  "issue_tracker": "https://github.com/behcetozcann/ha-tape-lights/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,24 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Eklenecek TAPE LIGHTS kontrolcüsünü seçin.",
+        "data": { "address": "Cihaz" }
+      },
+      "confirm": {
+        "description": "{name} ({address}) kurulsun mu?"
+      }
+    },
+    "abort": {
+      "already_configured": "Bu kontrolcü zaten ekli.",
+      "no_devices_found": "TAPE LIGHTS bulunamadı. Cihazı açın ve yayın yapabilmesi için Rhythm Pro uygulamasını kapatın."
+    }
+  },
+  "entity": {
+    "number": {
+      "effect_speed": { "name": "Efekt hızı" },
+      "mic_sensitivity": { "name": "Mikrofon hassasiyeti" }
+    }
+  }
+}
