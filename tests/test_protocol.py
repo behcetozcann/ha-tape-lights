@@ -57,7 +57,7 @@ def test_effect_catalogue_size_matches_app():
 
 
 def test_open_close_1_matches_verified_frame():
-    assert effects.effect_command("Open-Close 1", 50, 255) == (0x18, [1, 0, 0, 0, 0, 0, 0, 0, 50, 255])
+    assert effects.effect_command("open_close_1", 50, 255) == (0x18, [1, 0, 0, 0, 0, 0, 0, 0, 50, 255])
 
 
 def test_color_pairs_never_repeat_first_color():
@@ -68,4 +68,23 @@ def test_color_pairs_never_repeat_first_color():
 
 def test_unknown_effect_rejected():
     with pytest.raises(ValueError):
-        effects.effect_command("Water 91", 50, 255)
+        effects.effect_command("water_91", 50, 255)
+
+
+def test_led_count_is_little_endian_16_bit():
+    assert protocol.led_count(300) == (0x31, [300 & 0xFF, 300 >> 8])
+    assert protocol.led_count(5000)[1] == [1024 & 0xFF, 1024 >> 8]
+
+
+def test_wire_order_index_matches_app():
+    assert protocol.wire_order("RGB") == (0x30, [0])
+    assert protocol.wire_order("GRB") == (0x30, [2])
+    assert protocol.wire_order("BGR") == (0x30, [5])
+
+
+@pytest.mark.parametrize("language", ["en", "tr"])
+def test_every_effect_has_a_translation(language):
+    import json
+    data = json.loads((PACKAGE / "translations" / f"{language}.json").read_text(encoding="utf-8"))
+    names = data["entity"]["light"]["strip"]["state_attributes"]["effect"]["state"]
+    assert set(names) == set(effects.effect_list())

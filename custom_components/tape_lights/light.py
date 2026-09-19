@@ -31,6 +31,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
     """The controller does not report state, so it is assumed and restored."""
 
     _attr_name = None
+    _attr_translation_key = "strip"
     _attr_assumed_state = True
     _attr_color_mode = ColorMode.RGB
     _attr_supported_color_modes = {ColorMode.RGB}

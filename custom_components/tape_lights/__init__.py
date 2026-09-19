@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from .const import DEFAULT_NAME
 from .device import TapeLightsDevice
 
-PLATFORMS = [Platform.LIGHT, Platform.NUMBER]
+PLATFORMS = [Platform.LIGHT, Platform.NUMBER, Platform.SELECT]
 
 type TapeLightsConfigEntry = ConfigEntry[TapeLightsDevice]
 

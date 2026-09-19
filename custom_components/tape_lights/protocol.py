@@ -20,6 +20,8 @@ WRITE_CHAR_UUID = "0000fff3-0000-1000-8000-00805f9b34fb"
 
 CMD_POWER = 0x10
 CMD_COLOR = 0x22
+CMD_WIRE_ORDER = 0x30
+CMD_LED_COUNT = 0x31
 CMD_MIC_MODE = 0x54
 CMD_MIC_SENSITIVITY = 0x56
 
@@ -109,6 +111,22 @@ def color(red: int, green: int, blue: int, brightness: int = 255) -> tuple[int, 
     if not any(scaled):
         scaled = [1, 1, 1]
     return CMD_COLOR, scaled
+
+
+# Index sent by the app's "Adjust line sequence" page.
+WIRE_ORDERS = ("RGB", "RBG", "GRB", "GBR", "BRG", "BGR")
+LED_COUNT_MIN = 100
+LED_COUNT_MAX = 1024
+
+
+def wire_order(order: str) -> tuple[int, list[int]]:
+    return CMD_WIRE_ORDER, [WIRE_ORDERS.index(order)]
+
+
+def led_count(count: int) -> tuple[int, list[int]]:
+    """Number of pixels on the strip; the app accepts 100-1024."""
+    count = max(LED_COUNT_MIN, min(LED_COUNT_MAX, count))
+    return CMD_LED_COUNT, [count & 0xFF, count >> 8]
 
 
 def mic_mode(mode: int = 0) -> tuple[int, list[int]]:

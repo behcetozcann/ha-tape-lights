@@ -10,7 +10,8 @@ from __future__ import annotations
 PALETTE = (0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0x00FFFF, 0xFF00FF, 0xFFFFFF)
 PALETTE_HALF = (0x800000, 0x008000, 0x000080, 0x808000, 0x008080, 0x800080, 0x808080)
 
-MIC_EFFECT = "Microphone"
+MIC_EFFECT = "microphone"
+MIC_NAMES = {"en": "Microphone", "tr": "Mikrofon (sese duyarlı)"}
 
 
 def _color_pair(index: int) -> tuple[int, int]:
@@ -50,20 +51,32 @@ def _run(style: int) -> tuple[int, int, int]:
     return 2, *_color_pair(style - 14)
 
 
-# name, command, number of styles, formula
+# key, display names, command, number of styles, formula
 CATEGORIES = (
-    ("Open-Close", 0x18, 20, _open_close),
-    ("Transition", 0x17, 20, _open_close),
-    ("Water", 0x16, 90, _water),
-    ("Trail", 0x15, 16, _trail),
-    ("Flow", 0x14, 84, _flow),
-    ("Run", 0x13, 98, _run),
+    ("open_close", {"en": "Open-Close", "tr": "Açılıp Kapanma"}, 0x18, 20, _open_close),
+    ("transition", {"en": "Transition", "tr": "Geçiş"}, 0x17, 20, _open_close),
+    ("water", {"en": "Water", "tr": "Akan Su"}, 0x16, 90, _water),
+    ("trail", {"en": "Trail", "tr": "Kuyruklu İz"}, 0x15, 16, _trail),
+    ("flow", {"en": "Flow", "tr": "Akış"}, 0x14, 84, _flow),
+    ("run", {"en": "Run", "tr": "Kovalamaca"}, 0x13, 98, _run),
 )
 
 
 def effect_list() -> list[str]:
-    names = [f"{name} {style + 1}" for name, _, count, _ in CATEGORIES for style in range(count)]
-    return [*names, MIC_EFFECT]
+    """Effect keys such as "water_20"; display names come from translations."""
+    keys = [f"{key}_{style + 1}" for key, _, _, count, _ in CATEGORIES for style in range(count)]
+    return [*keys, MIC_EFFECT]
+
+
+def effect_names(language: str) -> dict[str, str]:
+    """Key -> display name for one language, used to generate translations."""
+    names = {
+        f"{key}_{style + 1}": f"{labels[language]} {style + 1}"
+        for key, labels, _, count, _ in CATEGORIES
+        for style in range(count)
+    }
+    names[MIC_EFFECT] = MIC_NAMES[language]
+    return names
 
 
 def _split_rgb(value: int) -> list[int]:
@@ -75,9 +88,9 @@ def effect_command(effect: str, speed: int, brightness: int) -> tuple[int, list[
 
     speed is 1-100, brightness 0-255 (sent as max(12, percent * 255 / 100)).
     """
-    name, _, number = effect.rpartition(" ")
-    for category, command, count, formula in CATEGORIES:
-        if category != name:
+    name, _, number = effect.rpartition("_")
+    for category, _, command, count, formula in CATEGORIES:
+        if category != name or not number.isdigit():
             continue
         style = int(number) - 1
         if not 0 <= style < count:
