@@ -22,6 +22,8 @@ TEXTS = {
         "mic_sensitivity": "Microphone sensitivity",
         "led_count": "LED count",
         "wire_order": "Wire color order",
+        "second_color": "Effect second color",
+        "effect_off": "Off (solid color)",
     },
     "tr": {
         "user": "Eklenecek TAPE LIGHTS kontrolcüsünü seçin.",
@@ -33,6 +35,8 @@ TEXTS = {
         "mic_sensitivity": "Mikrofon hassasiyeti",
         "led_count": "LED sayısı",
         "wire_order": "Kablo renk sırası",
+        "second_color": "Efekt 2. rengi",
+        "effect_off": "Kapalı (düz renk)",
     },
 }
 
@@ -60,14 +64,21 @@ def build(language: str, effects) -> dict:
         },
         "entity": {
             "light": {
-                "strip": {"state_attributes": {"effect": {"state": effects.effect_names(language)}}}
+                "strip": {
+                    "state_attributes": {
+                        "effect": {"state": {"off": text["effect_off"], **effects.effect_names(language)}}
+                    }
+                }
             },
             "number": {
                 "effect_speed": {"name": text["effect_speed"]},
                 "mic_sensitivity": {"name": text["mic_sensitivity"]},
                 "led_count": {"name": text["led_count"]},
             },
-            "select": {"wire_order": {"name": text["wire_order"]}},
+            "select": {
+                "wire_order": {"name": text["wire_order"]},
+                "second_color": {"name": text["second_color"], "state": effects.SECOND_COLOR_NAMES[language]},
+            },
         },
     }
 

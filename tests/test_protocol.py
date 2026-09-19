@@ -87,4 +87,12 @@ def test_every_effect_has_a_translation(language):
     import json
     data = json.loads((PACKAGE / "translations" / f"{language}.json").read_text(encoding="utf-8"))
     names = data["entity"]["light"]["strip"]["state_attributes"]["effect"]["state"]
-    assert set(names) == set(effects.effect_list())
+    assert set(names) == {"off", *effects.effect_list()}
+
+
+def test_custom_colors_replace_palette_colors():
+    assert effects.effect_command("water_20", 50, 255, 0x0000FF, 0xFFFF00)[1][2:8] == [0, 0, 255, 255, 255, 0]
+
+
+def test_custom_color_ignored_by_rainbow_styles():
+    assert effects.effect_command("open_close_1", 50, 255, first_color=0xFF6000)[1][2:8] == [0] * 6

@@ -7,6 +7,7 @@ from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_EFFECT,
     ATTR_RGB_COLOR,
+    EFFECT_OFF,
     ColorMode,
     LightEntity,
     LightEntityFeature,
@@ -17,8 +18,10 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import TapeLightsConfigEntry, protocol
-from .effects import MIC_EFFECT, effect_command, effect_list
+from .effects import MIC_EFFECT, SECOND_COLORS, effect_command, effect_list, rgb_to_int
 from .entity import TapeLightsEntity
+
+ATTR_CUSTOM_EFFECT_COLOR = "custom_effect_color"
 
 
 async def async_setup_entry(
@@ -28,7 +31,11 @@ async def async_setup_entry(
 
 
 class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
-    """The controller does not report state, so it is assumed and restored."""
+    """The controller does not report state, so it is assumed and restored.
+
+    Picking a color while an effect runs recolors the effect instead of
+    stopping it; the "off" effect returns to a solid color.
+    """
 
     _attr_name = None
     _attr_translation_key = "strip"
@@ -39,12 +46,21 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
 
     def __init__(self, device) -> None:
         super().__init__(device, "light")
-        self._attr_effect_list = effect_list()
+        self._attr_effect_list = [EFFECT_OFF, *effect_list()]
         self._attr_is_on = False
         self._attr_brightness = 255
         self._attr_rgb_color = (255, 255, 255)
-        self._attr_effect = None
+        self._attr_effect = EFFECT_OFF
+        self._custom_effect_color = False
         device.refresh_effect = self._async_refresh_effect
+
+    @property
+    def _effect_running(self) -> bool:
+        return self._attr_effect not in (None, EFFECT_OFF)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {ATTR_CUSTOM_EFFECT_COLOR: self._custom_effect_color}
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -56,24 +72,31 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
             self._attr_rgb_color = tuple(rgb)
         if (effect := last.attributes.get(ATTR_EFFECT)) in self._attr_effect_list:
             self._attr_effect = effect
+        self._custom_effect_color = bool(last.attributes.get(ATTR_CUSTOM_EFFECT_COLOR))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        was_on = self._attr_is_on
-        if not was_on:
+        if not self._attr_is_on:
             await self._device.send(protocol.power(True))
             self._attr_is_on = True
         if ATTR_BRIGHTNESS in kwargs:
             self._attr_brightness = kwargs[ATTR_BRIGHTNESS]
+        if ATTR_RGB_COLOR in kwargs:
+            self._attr_rgb_color = kwargs[ATTR_RGB_COLOR]
 
         if ATTR_EFFECT in kwargs:
             self._attr_effect = kwargs[ATTR_EFFECT]
-            await self._async_send_effect()
+            # A new effect starts with its own colors unless a color came with it.
+            self._custom_effect_color = ATTR_RGB_COLOR in kwargs
+            await (self._async_send_effect() if self._effect_running else self._async_send_color())
         elif ATTR_RGB_COLOR in kwargs:
-            self._attr_effect = None
-            self._attr_rgb_color = kwargs[ATTR_RGB_COLOR]
-            await self._async_send_color()
+            if self._effect_running and self._attr_effect != MIC_EFFECT:
+                self._custom_effect_color = True
+                await self._async_send_effect()
+            else:
+                self._attr_effect = EFFECT_OFF
+                await self._async_send_color()
         elif ATTR_BRIGHTNESS in kwargs:
-            await (self._async_send_effect() if self._attr_effect else self._async_send_color())
+            await (self._async_send_effect() if self._effect_running else self._async_send_color())
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -89,11 +112,19 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
             await self._device.send(protocol.mic_mode(0))
             await self._device.send(protocol.mic_sensitivity(self._device.mic_sensitivity))
             return
+        first = rgb_to_int(self._attr_rgb_color) if self._custom_effect_color else None
         await self._device.send(
-            effect_command(self._attr_effect, self._device.speed, self._attr_brightness)
+            effect_command(
+                self._attr_effect,
+                self._device.speed,
+                self._attr_brightness,
+                first_color=first,
+                second_color=SECOND_COLORS.get(self._device.second_color),
+            )
         )
 
     async def _async_refresh_effect(self) -> None:
-        """Re-send the running effect after speed or sensitivity changed."""
-        if self._attr_is_on and self._attr_effect:
+        """Re-send the running effect after a setting changed."""
+        if self._attr_is_on and self._effect_running:
             await self._async_send_effect()
+            self.async_write_ha_state()

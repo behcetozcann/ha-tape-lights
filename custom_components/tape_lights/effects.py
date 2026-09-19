@@ -83,10 +83,45 @@ def _split_rgb(value: int) -> list[int]:
     return [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF]
 
 
-def effect_command(effect: str, speed: int, brightness: int) -> tuple[int, list[int]]:
+# Choices for the second effect color; "auto" keeps the style's own color.
+SECOND_COLORS = {
+    "auto": None,
+    "red": 0xFF0000,
+    "orange": 0xFF6000,
+    "yellow": 0xFFFF00,
+    "green": 0x00FF00,
+    "cyan": 0x00FFFF,
+    "blue": 0x0000FF,
+    "purple": 0x8000FF,
+    "pink": 0xFF00FF,
+    "white": 0xFFFFFF,
+}
+SECOND_COLOR_NAMES = {
+    "en": {"auto": "Effect's own color", "red": "Red", "orange": "Orange", "yellow": "Yellow",
+           "green": "Green", "cyan": "Cyan", "blue": "Blue", "purple": "Purple", "pink": "Pink",
+           "white": "White"},
+    "tr": {"auto": "Efektin kendi rengi", "red": "Kırmızı", "orange": "Turuncu", "yellow": "Sarı",
+           "green": "Yeşil", "cyan": "Camgöbeği", "blue": "Mavi", "purple": "Mor", "pink": "Pembe",
+           "white": "Beyaz"},
+}
+
+
+def rgb_to_int(rgb: tuple[int, int, int]) -> int:
+    return (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]
+
+
+def effect_command(
+    effect: str,
+    speed: int,
+    brightness: int,
+    first_color: int | None = None,
+    second_color: int | None = None,
+) -> tuple[int, list[int]]:
     """Command and 10 byte parameters for a named effect.
 
     speed is 1-100, brightness 0-255 (sent as max(12, percent * 255 / 100)).
+    first_color / second_color replace the style's palette colors, but only
+    in styles that use that color slot; rainbow styles are left untouched.
     """
     name, _, number = effect.rpartition("_")
     for category, _, command, count, formula in CATEGORIES:
@@ -96,6 +131,10 @@ def effect_command(effect: str, speed: int, brightness: int) -> tuple[int, list[
         if not 0 <= style < count:
             break
         pattern, color_a, color_b = formula(style)
+        if first_color is not None and color_a:
+            color_a = first_color
+        if second_color is not None and color_b:
+            color_b = second_color
         level = max(12, min(255, brightness))
         return command, [pattern, style & 1, *_split_rgb(color_a), *_split_rgb(color_b), speed, level]
     raise ValueError(f"unknown effect: {effect}")

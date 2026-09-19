@@ -16,6 +16,7 @@ enough if the strip is in range.
 | `number` Microphone sensitivity | 0-100, applied in microphone mode |
 | `number` LED count | 100-1024 pixels on the strip (see below) |
 | `select` Wire color order | RGB / RBG / GRB / GBR / BRG / BGR |
+| `select` Effect second color | second color of two color effects, or the effect's own color |
 
 Effect families (same order and numbering as the app):
 
@@ -28,6 +29,11 @@ Effect families (same order and numbering as the app):
 | Flow | 84 |
 | Run | 98 |
 | Microphone | sound reactive, uses the mic on the controller |
+
+**Effect colors:** an effect starts with its own palette colors. Pick a color
+while it runs and the effect keeps running in that color; *Effect second
+color* recolors the second half of two color effects. Rainbow styles ignore
+custom colors. Choose the effect **Off** to go back to a solid color.
 
 Effect names are translated (English, Turkish). In automations and service
 calls use the effect key, e.g. `effect: water_20`, `open_close_1`, `microphone`.
@@ -106,7 +112,10 @@ Rhythm Pro uygulamasıyla kullanılan, Bluetooth'ta `TAPE LIGHTS` adıyla görü
 LED şerit kontrolcülerini Home Assistant'tan buluta ve telefona gerek olmadan
 yönetir: aç/kapa, renk, parlaklık, 328 efekt (Türkçe adlarla) ve cihazın
 kendi mikrofonuyla sese duyarlı mod. Şerit parça parça farklı renkte yanıyorsa
-**LED sayısı** ayarını şeridin gerçek LED sayısına getirin (ör. 5 m × 60 = 300). Kurulum için yukarıdaki HACS adımlarını izleyin; kurulumdan
+**LED sayısı** ayarını şeridin gerçek LED sayısına getirin (ör. 5 m × 60 = 300).
+Efekt çalışırken renk seçerseniz efekt o renkte devam eder; iki renkli efektlerde
+ikinci renk için **Efekt 2. rengi** ayarını kullanın, düz renge dönmek için
+**Kapalı** efektini seçin. Kurulum için yukarıdaki HACS adımlarını izleyin; kurulumdan
 önce Rhythm Pro uygulamasını kapatın.
 
 ## License

@@ -28,6 +28,7 @@ class TapeLightsDevice:
         self.name = name
         self.speed = DEFAULT_SPEED
         self.mic_sensitivity = DEFAULT_MIC_SENSITIVITY
+        self.second_color = "auto"
         # Set by the light entity; number entities call it to re-apply settings.
         self.refresh_effect: Callable[[], Awaitable[None]] | None = None
         self._client: BleakClientWithServiceCache | None = None

@@ -23,6 +23,7 @@
         "state_attributes": {
           "effect": {
             "state": {
+              "off": "Kapalı (düz renk)",
               "open_close_1": "Açılıp Kapanma 1",
               "open_close_2": "Açılıp Kapanma 2",
               "open_close_3": "Açılıp Kapanma 3",
@@ -371,6 +372,21 @@
     "select": {
       "wire_order": {
         "name": "Kablo renk sırası"
+      },
+      "second_color": {
+        "name": "Efekt 2. rengi",
+        "state": {
+          "auto": "Efektin kendi rengi",
+          "red": "Kırmızı",
+          "orange": "Turuncu",
+          "yellow": "Sarı",
+          "green": "Yeşil",
+          "cyan": "Camgöbeği",
+          "blue": "Mavi",
+          "purple": "Mor",
+          "pink": "Pembe",
+          "white": "Beyaz"
+        }
       }
     }
   }
