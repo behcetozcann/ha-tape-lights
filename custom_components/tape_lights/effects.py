@@ -68,11 +68,37 @@ def effect_list() -> list[str]:
     return [*keys, MIC_EFFECT]
 
 
+COLOR_NAMES = {
+    0xFF0000: {"en": "Red", "tr": "Kırmızı"},
+    0x00FF00: {"en": "Green", "tr": "Yeşil"},
+    0x0000FF: {"en": "Blue", "tr": "Mavi"},
+    0xFFFF00: {"en": "Yellow", "tr": "Sarı"},
+    0x00FFFF: {"en": "Cyan", "tr": "Camgöbeği"},
+    0xFF00FF: {"en": "Magenta", "tr": "Pembe"},
+    0xFFFFFF: {"en": "White", "tr": "Beyaz"},
+    0x800000: {"en": "Dark red", "tr": "Koyu Kırmızı"},
+    0x008000: {"en": "Dark green", "tr": "Koyu Yeşil"},
+    0x000080: {"en": "Navy", "tr": "Lacivert"},
+    0x808000: {"en": "Olive", "tr": "Zeytin"},
+    0x008080: {"en": "Teal", "tr": "Koyu Camgöbeği"},
+    0x800080: {"en": "Purple", "tr": "Mor"},
+    0x808080: {"en": "Gray", "tr": "Gri"},
+}
+
+
+def _display_name(label: str, style: int, formula, language: str) -> str:
+    """"Water 20 · Green & Red"; styles without palette colors keep only the number."""
+    _, color_a, color_b = formula(style)
+    colors = [COLOR_NAMES[color][language] for color in (color_a, color_b) if color]
+    base = f"{label} {style + 1}"
+    return f"{base} · {' & '.join(colors)}" if colors else base
+
+
 def effect_names(language: str) -> dict[str, str]:
     """Key -> display name for one language, used to generate translations."""
     names = {
-        f"{key}_{style + 1}": f"{labels[language]} {style + 1}"
-        for key, labels, _, count, _ in CATEGORIES
+        f"{key}_{style + 1}": _display_name(labels[language], style, formula, language)
+        for key, labels, _, count, formula in CATEGORIES
         for style in range(count)
     }
     names[MIC_EFFECT] = MIC_NAMES[language]
