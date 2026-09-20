@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 import logging
+import random
 
 from bleak.exc import BleakDBusError, BleakError
 from bleak_retry_connector import (
@@ -54,7 +55,10 @@ class TapeLightsDevice:
         self._client: BleakClientWithServiceCache | None = None
         self._connect_lock = asyncio.Lock()
         self._write_lock = asyncio.Lock()
-        self._seq = 0
+        # The controller ignores frames whose sequence number is not newer than
+        # the last one it saw, so starting from 0 after a restart silently
+        # dropped the first commands. Start somewhere random instead.
+        self._seq = random.randint(0, 0xFFFF)
         self._disconnect_timer: asyncio.TimerHandle | None = None
         self._pending: dict[int, tuple[int, list[int]]] = {}
         self._worker: asyncio.Task | None = None
