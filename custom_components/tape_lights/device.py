@@ -60,6 +60,7 @@ class TapeLightsDevice:
         # dropped the first commands. Start somewhere random instead.
         self._seq = random.randint(0, 0xFFFF)
         self._disconnect_timer: asyncio.TimerHandle | None = None
+        self._ack_writes = True
         self._pending: dict[int, tuple[int, list[int]]] = {}
         self._worker: asyncio.Task | None = None
 
@@ -105,7 +106,7 @@ class TapeLightsDevice:
             for attempt in (1, 2):
                 try:
                     client = await self._ensure_connected()
-                    await client.write_gatt_char(self._write_char(client), frame, response=False)
+                    await self._write(client, frame)
                     break
                 except BleakNotFoundError as err:
                     raise HomeAssistantError(f"{self.name}: not reachable: {err}") from err
@@ -118,6 +119,25 @@ class TapeLightsDevice:
             _LOGGER.debug("%s: sent cmd 0x%02X %s", self.name, cmd, params)
             await asyncio.sleep(COMMAND_SETTLE_SECONDS)
             self._reset_disconnect_timer()
+
+    async def _write(self, client: BleakClientWithServiceCache, frame: bytes) -> None:
+        """Acknowledged write when the characteristic allows it.
+
+        The phone app writes without a response, but those frames are silently
+        lost now and then ("a command works, the next one does not"), so an
+        acknowledged write is used whenever the controller supports it.
+        """
+        char = self._write_char(client)
+        if self._ack_writes:
+            try:
+                await client.write_gatt_char(char, frame, response=True)
+                return
+            except (BleakDBusError, BleakError) as err:
+                if not self._client or not self._client.is_connected:
+                    raise
+                _LOGGER.debug("%s: acknowledged write rejected (%s), falling back", self.name, err)
+                self._ack_writes = False
+        await client.write_gatt_char(char, frame, response=False)
 
     async def _ensure_connected(self) -> BleakClientWithServiceCache:
         if self._client and self._client.is_connected:
