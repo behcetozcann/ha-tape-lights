@@ -75,6 +75,6 @@ class TapeLightsLedCount(TapeLightsEntity, RestoreNumber):
             self._attr_native_value = last.native_value
 
     async def async_set_native_value(self, value: float) -> None:
-        await self._device.send(protocol.led_count(int(value)))
+        self._device.queue(protocol.led_count(int(value)))
         self._attr_native_value = int(value)
         self.async_write_ha_state()

@@ -34,6 +34,6 @@ class TapeLightsWireOrder(TapeLightsEntity, SelectEntity, RestoreEntity):
             self._attr_current_option = last.state
 
     async def async_select_option(self, option: str) -> None:
-        await self._device.send(protocol.wire_order(option))
+        self._device.queue(protocol.wire_order(option))
         self._attr_current_option = option
         self.async_write_ha_state()

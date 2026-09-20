@@ -81,6 +81,10 @@ Manual install: copy `custom_components/tape_lights` into your
 
 ## Notes
 
+- Commands are queued and sent in the background, so the UI never waits for
+  Bluetooth; a newer command of the same kind replaces a pending one, which
+  keeps dragging the color wheel from flooding the controller. Failures are
+  logged as warnings instead of failing the service call.
 - Only one Bluetooth connection is possible at a time. The integration keeps
   the link for 2 minutes after the last command (reconnecting takes seconds,
   so commands would otherwise queue), then drops it so the phone app can

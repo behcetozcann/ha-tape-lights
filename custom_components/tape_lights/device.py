@@ -38,6 +38,27 @@ class TapeLightsDevice:
         self._lock = asyncio.Lock()
         self._seq = random.randint(0, 0xFFFF)
         self._disconnect_timer: asyncio.TimerHandle | None = None
+        self._pending: dict[int, tuple[int, list[int]]] = {}
+        self._worker: asyncio.Task | None = None
+
+    def queue(self, command: tuple[int, list[int]]) -> None:
+        """Send in the background so service calls never wait for Bluetooth.
+
+        A newer command of the same kind replaces an older pending one, which
+        keeps colour sliders from queueing up every intermediate value.
+        """
+        self._pending[command[0]] = command
+        if self._worker is None or self._worker.done():
+            self._worker = self.hass.async_create_task(self._drain())
+
+    async def _drain(self) -> None:
+        while self._pending:
+            cmd = next(iter(self._pending))
+            command = self._pending.pop(cmd)
+            try:
+                await self.send(command)
+            except HomeAssistantError as err:
+                _LOGGER.warning("%s", err)
 
     async def send(self, command: tuple[int, list[int]]) -> None:
         """Encode and write one command, connecting first if needed."""

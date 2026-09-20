@@ -78,7 +78,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         was_on = self._attr_is_on
         if not was_on:
-            await self._device.send(protocol.power(True))
+            self._device.queue(protocol.power(True))
             self._attr_is_on = True
         if ATTR_BRIGHTNESS in kwargs:
             self._attr_brightness = kwargs[ATTR_BRIGHTNESS]
@@ -104,7 +104,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self._device.send(protocol.power(False))
+        self._device.queue(protocol.power(False))
         self._attr_is_on = False
         self.async_write_ha_state()
 
@@ -112,17 +112,17 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         return protocol.balance(rgb, self._device.green_balance, self._device.blue_balance)
 
     async def _async_send_color(self) -> None:
-        await self._device.send(
+        self._device.queue(
             protocol.color(*self._balanced(self._attr_rgb_color), self._attr_brightness)
         )
 
     async def _async_send_effect(self) -> None:
         if self._attr_effect == MIC_EFFECT:
-            await self._device.send(protocol.mic_mode(0))
-            await self._device.send(protocol.mic_sensitivity(self._device.mic_sensitivity))
+            self._device.queue(protocol.mic_mode(0))
+            self._device.queue(protocol.mic_sensitivity(self._device.mic_sensitivity))
             return
         first = rgb_to_int(self._balanced(self._attr_rgb_color)) if self._custom_effect_color else None
-        await self._device.send(
+        self._device.queue(
             effect_command(
                 self._attr_effect,
                 self._device.speed,
