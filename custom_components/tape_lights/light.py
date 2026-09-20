@@ -105,15 +105,20 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         self._attr_is_on = False
         self.async_write_ha_state()
 
+    def _balanced(self, rgb: tuple[int, int, int]) -> tuple[int, int, int]:
+        return protocol.balance(rgb, self._device.green_balance, self._device.blue_balance)
+
     async def _async_send_color(self) -> None:
-        await self._device.send(protocol.color(*self._attr_rgb_color, self._attr_brightness))
+        await self._device.send(
+            protocol.color(*self._balanced(self._attr_rgb_color), self._attr_brightness)
+        )
 
     async def _async_send_effect(self) -> None:
         if self._attr_effect == MIC_EFFECT:
             await self._device.send(protocol.mic_mode(0))
             await self._device.send(protocol.mic_sensitivity(self._device.mic_sensitivity))
             return
-        first = rgb_to_int(protocol.balance(self._attr_rgb_color)) if self._custom_effect_color else None
+        first = rgb_to_int(self._balanced(self._attr_rgb_color)) if self._custom_effect_color else None
         await self._device.send(
             effect_command(
                 self._attr_effect,
@@ -125,10 +130,11 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         )
 
     async def _async_refresh_effect(self) -> None:
-        """Re-send the running effect after a setting changed."""
-        if self._attr_is_on and self._effect_running:
-            await self._async_send_effect()
-            self.async_write_ha_state()
+        """Re-apply the current state after a setting such as a balance changed."""
+        if not self._attr_is_on:
+            return
+        await (self._async_send_effect() if self._effect_running else self._async_send_color())
+        self.async_write_ha_state()
 
 
 class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
@@ -157,13 +163,13 @@ class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
             self._attr_rgb_color = tuple(rgb)
         if last.state == STATE_ON:
             self._attr_is_on = True
-            self._device.second_color = rgb_to_int(protocol.balance(self._attr_rgb_color))
+            self._update_second_color()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         if ATTR_RGB_COLOR in kwargs:
             self._attr_rgb_color = kwargs[ATTR_RGB_COLOR]
         self._attr_is_on = True
-        self._device.second_color = rgb_to_int(protocol.balance(self._attr_rgb_color))
+        self._update_second_color()
         await self._apply()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -171,7 +177,14 @@ class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
         self._device.second_color = None
         await self._apply()
 
+    def _update_second_color(self) -> None:
+        self._device.second_color = rgb_to_int(
+            protocol.balance(self._attr_rgb_color, self._device.green_balance, self._device.blue_balance)
+        )
+
     async def _apply(self) -> None:
+        if self._device.second_color is not None:
+            self._update_second_color()
         if self._device.refresh_effect:
             await self._device.refresh_effect()
         self.async_write_ha_state()

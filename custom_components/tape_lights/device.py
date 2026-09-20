@@ -15,6 +15,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from . import protocol
 from .const import DEFAULT_MIC_SENSITIVITY, DEFAULT_SPEED, IDLE_DISCONNECT_SECONDS
+from .protocol import DEFAULT_BLUE_BALANCE, DEFAULT_GREEN_BALANCE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +30,8 @@ class TapeLightsDevice:
         self.speed = DEFAULT_SPEED
         self.mic_sensitivity = DEFAULT_MIC_SENSITIVITY
         self.second_color: int | None = None  # effect second color, None = its own
+        self.green_balance = DEFAULT_GREEN_BALANCE
+        self.blue_balance = DEFAULT_BLUE_BALANCE
         # Set by the light entity; number entities call it to re-apply settings.
         self.refresh_effect: Callable[[], Awaitable[None]] | None = None
         self._client: BleakClientWithServiceCache | None = None

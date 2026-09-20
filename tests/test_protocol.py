@@ -100,9 +100,9 @@ def test_custom_color_ignored_by_rainbow_styles():
 
 @pytest.mark.parametrize("pure", [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 0, 0)])
 def test_balance_keeps_pure_colors(pure):
-    assert protocol.balance(pure) == pure
+    assert protocol.balance(pure, 42, 55) == pure
 
 
 def test_balance_tames_green_in_mixes_without_dimming():
-    balanced = protocol.balance((255, 96, 0))
+    balanced = protocol.balance((255, 96, 0), 42, 55)
     assert balanced[0] == 255 and balanced[1] < 96
