@@ -47,7 +47,9 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
 
     def __init__(self, device) -> None:
         super().__init__(device, "light")
-        self._attr_effect_list = [EFFECT_OFF, *effect_list()]
+        # "off" goes last: as the first entry the iOS app renders it under the
+        # status bar when the list scrolls to the selected effect, out of reach.
+        self._attr_effect_list = [*effect_list(), EFFECT_OFF]
         self._attr_is_on = False
         self._attr_brightness = 255
         self._attr_rgb_color = (255, 255, 255)
