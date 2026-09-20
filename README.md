@@ -15,6 +15,7 @@ enough if the strip is in range.
 | `number` Effect speed | 1-100, applied to the running effect |
 | `number` Microphone sensitivity | 0-100, applied in microphone mode |
 | `number` LED count | 100-1024 pixels on the strip (see below) |
+| `number` Green / Blue balance | per-channel color calibration |
 | `select` Wire color order | RGB / RBG / GRB / GBR / BRG / BGR |
 | `light` Effect second color | color wheel for the second color of two color effects |
 
@@ -46,9 +47,11 @@ that is restored after a restart.
 ### Colors
 
 The strip's green and blue LEDs are brighter than the red ones, so a raw RGB
-mix drifts towards green. Colors are balanced before they are sent
-(`CHANNEL_BALANCE` in `protocol.py`) so that the strip matches the color
-picker; pure red, green and blue are sent unchanged.
+mix drifts towards green. Colors are balanced before they are sent, so the strip matches the color
+picker; pure red, green and blue are sent unchanged. The ratio differs
+between strips, so it is exposed as the *Green balance* and *Blue balance*
+sliders (defaults 42% and 55%, measured on a 5 m COB strip). Lower the value
+if that channel dominates.
 
 ### LED count and wire order
 
