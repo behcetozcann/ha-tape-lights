@@ -1,4 +1,4 @@
-"""Config flow: pick a discovered TAPE LIGHTS controller."""
+"""Config flow: pick a discovered TAPE LIGHTS controller and how to reach it."""
 from __future__ import annotations
 
 from typing import Any
@@ -9,18 +9,58 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.core import callback
+from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
-from .const import DEFAULT_NAME, DOMAIN
+from .const import (
+    CONF_CONNECTION_SENSOR,
+    CONF_ESPHOME_NODE,
+    CONF_TRANSPORT,
+    DEFAULT_NAME,
+    DEFAULT_TRANSPORT,
+    DOMAIN,
+    ESPHOME_DOMAIN,
+    TRANSPORT_BLUETOOTH,
+    TRANSPORT_ESPHOME,
+)
+
+SEND_FRAME_SUFFIX = "_send_frame"
 
 
 def _is_tape_lights(info: BluetoothServiceInfoBleak) -> bool:
     return (info.name or "").upper().startswith(DEFAULT_NAME)
 
 
+def _esphome_nodes(hass) -> list[str]:
+    """ESPHome nodes running the tape-lights firmware, by their action name."""
+    services = hass.services.async_services().get(ESPHOME_DOMAIN, {})
+    return sorted(
+        service[: -len(SEND_FRAME_SUFFIX)]
+        for service in services
+        if service.endswith(SEND_FRAME_SUFFIX)
+    )
+
+
 class TapeLightsConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> TapeLightsOptionsFlow:
+        return TapeLightsOptionsFlow()
 
     def __init__(self) -> None:
         self._discovery: BluetoothServiceInfoBleak | None = None
@@ -71,3 +111,59 @@ class TapeLightsConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def _create(self, address: str, name: str) -> ConfigFlowResult:
         return self.async_create_entry(title=name, data={CONF_ADDRESS: address, CONF_NAME: name})
+
+
+class TapeLightsOptionsFlow(OptionsFlowWithReload):
+    """Choose between the ESP32 bridge and direct Bluetooth."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        nodes = _esphome_nodes(self.hass)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            node = (user_input.get(CONF_ESPHOME_NODE) or "").strip()
+            if user_input[CONF_TRANSPORT] == TRANSPORT_ESPHOME and not node:
+                errors[CONF_ESPHOME_NODE] = "node_required"
+            elif node and not self.hass.services.has_service(
+                ESPHOME_DOMAIN, f"{node.replace('-', '_')}{SEND_FRAME_SUFFIX}"
+            ):
+                errors[CONF_ESPHOME_NODE] = "unknown_node"
+            if not errors:
+                return self.async_create_entry(data={**user_input, CONF_ESPHOME_NODE: node})
+
+        options = self.config_entry.options
+        suggested_node = options.get(CONF_ESPHOME_NODE) or (nodes[0] if nodes else "")
+        return self.async_show_form(
+            step_id="init",
+            errors=errors,
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_TRANSPORT,
+                        default=options.get(
+                            CONF_TRANSPORT,
+                            TRANSPORT_ESPHOME if nodes else DEFAULT_TRANSPORT,
+                        ),
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[TRANSPORT_ESPHOME, TRANSPORT_BLUETOOTH],
+                            translation_key="transport",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_ESPHOME_NODE,
+                        description={"suggested_value": suggested_node},
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=nodes, custom_value=True, mode=SelectSelectorMode.DROPDOWN
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_CONNECTION_SENSOR,
+                        description={"suggested_value": options.get(CONF_CONNECTION_SENSOR)},
+                    ): EntitySelector(
+                        EntitySelectorConfig(domain="binary_sensor", integration=ESPHOME_DOMAIN)
+                    ),
+                }
+            ),
+        )

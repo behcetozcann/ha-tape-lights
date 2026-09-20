@@ -17,6 +17,35 @@
       "no_devices_found": "No TAPE LIGHTS controller found. Power it on and close the Rhythm Pro app so it advertises."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Connection",
+        "description": "How commands reach the controller. The ESP32 bridge (ha/esphome/tape-lights.yaml) keeps one Bluetooth link open, which is the only way the controller receives every command reliably.",
+        "data": {
+          "transport": "Path",
+          "esphome_node": "ESP32 node",
+          "connection_sensor": "ESP32 connection sensor"
+        },
+        "data_description": {
+          "esphome_node": "ESPHome node name, e.g. tape-lights.",
+          "connection_sensor": "Optional: when it turns on again, the current color or effect is sent once more."
+        }
+      }
+    },
+    "error": {
+      "node_required": "Enter the ESPHome node name.",
+      "unknown_node": "No esphome.<node>_send_frame action found. Flash tape-lights.yaml and make sure the ESP32 is online."
+    }
+  },
+  "selector": {
+    "transport": {
+      "options": {
+        "esphome": "Through the ESP32 (recommended)",
+        "bluetooth": "Direct Bluetooth"
+      }
+    }
+  },
   "entity": {
     "light": {
       "strip": {

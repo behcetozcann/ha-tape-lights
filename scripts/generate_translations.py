@@ -24,6 +24,17 @@ TEXTS = {
         "wire_order": "Wire color order",
         "second_color": "Effect second color",
         "effect_off": "Off (solid color)",
+        "options_title": "Connection",
+        "options_description": "How commands reach the controller. The ESP32 bridge (ha/esphome/tape-lights.yaml) keeps one Bluetooth link open, which is the only way the controller receives every command reliably.",
+        "transport": "Path",
+        "esphome_node": "ESP32 node",
+        "esphome_node_help": "ESPHome node name, e.g. tape-lights.",
+        "connection_sensor": "ESP32 connection sensor",
+        "connection_sensor_help": "Optional: when it turns on again, the current color or effect is sent once more.",
+        "node_required": "Enter the ESPHome node name.",
+        "unknown_node": "No esphome.<node>_send_frame action found. Flash tape-lights.yaml and make sure the ESP32 is online.",
+        "transport_esphome": "Through the ESP32 (recommended)",
+        "transport_bluetooth": "Direct Bluetooth",
     },
     "tr": {
         "user": "Eklenecek TAPE LIGHTS kontrolcüsünü seçin.",
@@ -37,6 +48,17 @@ TEXTS = {
         "wire_order": "Kablo renk sırası",
         "second_color": "Efekt 2. rengi",
         "effect_off": "Kapalı (düz renk)",
+        "options_title": "Bağlantı",
+        "options_description": "Komutların kontrolcüye hangi yoldan gittiği. ESP32 köprüsü (ha/esphome/tape-lights.yaml) tek bir Bluetooth bağlantısını sürekli açık tutar; kontrolcünün her komutu almasının tek güvenilir yolu budur.",
+        "transport": "Yol",
+        "esphome_node": "ESP32 düğümü",
+        "esphome_node_help": "ESPHome düğüm adı, örn. tape-lights.",
+        "connection_sensor": "ESP32 bağlantı sensörü",
+        "connection_sensor_help": "İsteğe bağlı: tekrar açıldığında mevcut renk veya efekt yeniden gönderilir.",
+        "node_required": "ESPHome düğüm adını yazın.",
+        "unknown_node": "esphome.<düğüm>_send_frame servisi bulunamadı. tape-lights.yaml yüklü mü ve ESP32 çevrimiçi mi?",
+        "transport_esphome": "ESP32 üzerinden (önerilen)",
+        "transport_bluetooth": "Doğrudan Bluetooth",
     },
 }
 
@@ -61,6 +83,35 @@ def build(language: str, effects) -> dict:
                 "already_configured": text["already_configured"],
                 "no_devices_found": text["no_devices_found"],
             },
+        },
+        "options": {
+            "step": {
+                "init": {
+                    "title": text["options_title"],
+                    "description": text["options_description"],
+                    "data": {
+                        "transport": text["transport"],
+                        "esphome_node": text["esphome_node"],
+                        "connection_sensor": text["connection_sensor"],
+                    },
+                    "data_description": {
+                        "esphome_node": text["esphome_node_help"],
+                        "connection_sensor": text["connection_sensor_help"],
+                    },
+                }
+            },
+            "error": {
+                "node_required": text["node_required"],
+                "unknown_node": text["unknown_node"],
+            },
+        },
+        "selector": {
+            "transport": {
+                "options": {
+                    "esphome": text["transport_esphome"],
+                    "bluetooth": text["transport_bluetooth"],
+                }
+            }
         },
         "entity": {
             "light": {

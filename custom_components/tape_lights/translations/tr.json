@@ -17,6 +17,35 @@
       "no_devices_found": "TAPE LIGHTS bulunamadı. Cihazı açın ve yayın yapabilmesi için Rhythm Pro uygulamasını kapatın."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bağlantı",
+        "description": "Komutların kontrolcüye hangi yoldan gittiği. ESP32 köprüsü (ha/esphome/tape-lights.yaml) tek bir Bluetooth bağlantısını sürekli açık tutar; kontrolcünün her komutu almasının tek güvenilir yolu budur.",
+        "data": {
+          "transport": "Yol",
+          "esphome_node": "ESP32 düğümü",
+          "connection_sensor": "ESP32 bağlantı sensörü"
+        },
+        "data_description": {
+          "esphome_node": "ESPHome düğüm adı, örn. tape-lights.",
+          "connection_sensor": "İsteğe bağlı: tekrar açıldığında mevcut renk veya efekt yeniden gönderilir."
+        }
+      }
+    },
+    "error": {
+      "node_required": "ESPHome düğüm adını yazın.",
+      "unknown_node": "esphome.<düğüm>_send_frame servisi bulunamadı. tape-lights.yaml yüklü mü ve ESP32 çevrimiçi mi?"
+    }
+  },
+  "selector": {
+    "transport": {
+      "options": {
+        "esphome": "ESP32 üzerinden (önerilen)",
+        "bluetooth": "Doğrudan Bluetooth"
+      }
+    }
+  },
   "entity": {
     "light": {
       "strip": {

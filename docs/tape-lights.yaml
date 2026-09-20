@@ -1,0 +1,98 @@
+# Example ESPHome configuration for the ha-tape-lights integration.
+#
+# The TAPE LIGHTS controller drops commands when Home Assistant connects and
+# disconnects for every write. The phone app keeps one GATT link open instead,
+# and so does this ESP32: it stays connected and Home Assistant hands it ready
+# made 17 byte frames through the `send_frame` action.
+#
+# Fill in the strip's MAC, your Wi-Fi and fresh passwords/keys (use
+# !secret in your own repository) and flash it with `esphome run`.
+substitutions:
+  name: tape-lights
+  friendly_name: TAPE LIGHTS Koprusu
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf          # uses less memory than arduino
+
+logger:
+
+ota:
+  - platform: esphome
+    password: "CHANGE_ME_OTA"
+
+wifi:
+  ssid: "YOUR_WIFI"
+  password: "YOUR_WIFI_PASSWORD"
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: "CHANGE_ME_OTA"
+
+captive_portal:
+
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+
+# Optional. Keep it passive: the link to the strip must not compete for
+# connection slots, and the strip stops advertising while it is connected.
+bluetooth_proxy:
+  active: false
+
+ble_client:
+  - id: tape
+    mac_address: AA:BB:CC:DD:EE:FF  # the strip's MAC
+    auto_connect: true     # reconnects by itself after a drop
+    on_connect:
+      then:
+        - logger.log: "TAPE LIGHTS connected"
+        - binary_sensor.template.publish:
+            id: tape_connected
+            state: true
+    on_disconnect:
+      then:
+        - logger.log: "TAPE LIGHTS disconnected"
+        - binary_sensor.template.publish:
+            id: tape_connected
+            state: false
+
+binary_sensor:
+  # ble_client has no status platform, so the triggers above drive this one.
+  # Home Assistant re-sends the current colour or effect when it turns on again.
+  - platform: template
+    id: tape_connected
+    name: "Baglanti"
+    device_class: connectivity
+
+api:
+  encryption:
+    key: "CHANGE_ME_BASE64_API_KEY"
+  actions:
+    # Home Assistant encodes the frame (custom_components/tape_lights/protocol.py)
+    # and sends the 17 bytes here as a list of integers.
+    - action: send_frame
+      variables:
+        frame: int[]
+      then:
+        - ble_client.ble_write:
+            id: tape
+            service_uuid: 49535343-fe7d-4be5-8fa9-9fafd205e455
+            characteristic_uuid: 0000fff3-0000-1000-8000-00805f9b34fb
+            value: !lambda |-
+              std::vector<uint8_t> out;
+              out.reserve(frame.size());
+              for (int byte : frame) out.push_back((uint8_t) byte);
+              return out;
+    # The controller ignores frames whose sequence number is not newer than the
+    # last one it saw. Home Assistant picks a fresh random sequence when it
+    # restarts, so it asks for a new link first.
+    - action: reconnect_strip
+      then:
+        - ble_client.disconnect: tape
+        - delay: 1s
+        - ble_client.connect: tape

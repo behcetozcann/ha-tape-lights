@@ -2,9 +2,11 @@
 
 Local Bluetooth control for the cheap addressable LED strip controllers that
 advertise as **`TAPE LIGHTS`** and are normally used with the **Rhythm Pro**
-app (Shenzhen Jingyuan Micro Control, `com.jingyuan.rhythm`). No cloud, no
-phone, no ESP32 needed. The Home Assistant host's own Bluetooth adapter is
-enough if the strip is in range.
+app (Shenzhen Jingyuan Micro Control, `com.jingyuan.rhythm`). No cloud and no
+phone. The Home Assistant host's own Bluetooth adapter works, but these
+controllers lose commands unless something stays connected to them, so an ESP32
+bridge ([see below](#recommended-an-esp32-that-keeps-the-link-open)) is the
+reliable setup.
 
 ## Features
 
@@ -69,13 +71,40 @@ microphone sensitivity mapping is decoded from the app but not yet confirmed.
 Manual install: copy `custom_components/tape_lights` into your
 `config/custom_components` folder and restart.
 
+### Recommended: an ESP32 that keeps the link open
+
+Connecting and disconnecting for every command makes this controller drop
+commands now and then. The phone app keeps a single GATT link open, and an
+ESP32 running ESPHome can do the same. Home Assistant then only encodes the
+frame and hands it over:
+
+```
+Home Assistant --esphome.<node>_send_frame--> ESP32 --BLE (always connected)--> strip
+```
+
+1. Flash an ESP32 with an ESPHome configuration that holds the link and exposes
+   the frame action ([example](https://github.com/behcetozcann/ha-tape-lights/blob/main/docs/tape-lights.yaml)):
+   a `ble_client` with the strip's MAC and `auto_connect: true`, plus an
+   `api: actions:` entry named `send_frame` taking `frame: int[]` and writing it
+   with `ble_client.ble_write` to `0000fff3-…` in
+   `49535343-fe7d-4be5-8fa9-9fafd205e455`. A second action, `reconnect_strip`,
+   disconnects and reconnects.
+2. *Settings → Devices & services → TAPE LIGHTS → Configure* → **Through the
+   ESP32**, and enter the ESPHome node name.
+3. Optionally point the *connection sensor* at the ESP32's connectivity binary
+   sensor; the current color or effect is sent again whenever the link returns.
+
+The ESP32 is dedicated to the strip: while it is connected the strip no longer
+advertises, so a Bluetooth proxy on the same board should stay passive
+(`active: false`). *Direct Bluetooth* remains available as a fallback.
+
 ## Notes
 
 - Commands are queued and sent in the background, so the UI never waits for
   Bluetooth; a newer command of the same kind replaces a pending one, which
   keeps dragging the color wheel from flooding the controller. Failures are
   logged as warnings instead of failing the service call.
-- The controller only advertises while it is disconnected, and Home Assistant
+- With the direct Bluetooth path, the controller only advertises while it is disconnected, and Home Assistant
   forgets a device that has not advertised for about 195 seconds. The link is
   therefore dropped 10 seconds after the last command; the BLEDevice is kept
   fresh from advertisements, stale BlueZ links are closed before connecting,
@@ -128,6 +157,11 @@ ikinci renk için **Efekt 2. rengi** ışığını kullanın (kapatınca efekt k
 rengine döner), düz renge dönmek için
 **Kapalı** efektini seçin. Kurulum için yukarıdaki HACS adımlarını izleyin; kurulumdan
 önce Rhythm Pro uygulamasını kapatın.
+
+Komutların arada bir kaybolmaması için önerilen yol, şeride sürekli bağlı kalan
+bir **ESP32** köprüsüdür: ESPHome'da `ble_client` + `send_frame` servisi kurulur,
+entegrasyonun *Yapılandır* ekranından **ESP32 üzerinden** seçilir ve düğüm adı
+yazılır.
 
 ## License
 

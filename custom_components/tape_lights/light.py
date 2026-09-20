@@ -79,9 +79,11 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         was_on = self._attr_is_on
-        if not was_on:
-            self._device.queue(protocol.power(True))
-            self._attr_is_on = True
+        # Always sent: the controller reports nothing, so a strip switched off
+        # from the app or the remote would stay off while Home Assistant thinks
+        # it is already on.
+        self._device.queue(protocol.power(True))
+        self._attr_is_on = True
         if ATTR_BRIGHTNESS in kwargs:
             self._attr_brightness = kwargs[ATTR_BRIGHTNESS]
         if ATTR_RGB_COLOR in kwargs:

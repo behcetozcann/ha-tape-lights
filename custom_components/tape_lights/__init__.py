@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DEFAULT_NAME
 from .device import TapeLightsDevice
+from .transport import async_create_transport
 
 PLATFORMS = [Platform.LIGHT, Platform.NUMBER, Platform.SELECT]
 
@@ -14,11 +15,12 @@ type TapeLightsConfigEntry = ConfigEntry[TapeLightsDevice]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: TapeLightsConfigEntry) -> bool:
-    device = TapeLightsDevice(
-        hass, entry.data[CONF_ADDRESS], entry.data.get(CONF_NAME, DEFAULT_NAME)
-    )
+    address = entry.data[CONF_ADDRESS]
+    name = entry.data.get(CONF_NAME, DEFAULT_NAME)
+    transport = async_create_transport(hass, entry, address, name)
+    device = TapeLightsDevice(hass, transport, address, name)
     entry.runtime_data = device
-    entry.async_on_unload(device.async_start())
+    await device.async_start()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
