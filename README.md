@@ -81,8 +81,10 @@ Manual install: copy `custom_components/tape_lights` into your
 
 ## Notes
 
-- Only one Bluetooth connection is possible at a time. The integration drops
-  its link after 30 idle seconds so the phone app can connect again.
+- Only one Bluetooth connection is possible at a time. The integration keeps
+  the link for 2 minutes after the last command (reconnecting takes seconds,
+  so commands would otherwise queue), then drops it so the phone app can
+  connect again.
 - Tested with a Raspberry Pi's built-in adapter; ESPHome Bluetooth proxies
   with `active: true` should work as well.
 

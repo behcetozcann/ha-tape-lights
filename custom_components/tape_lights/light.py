@@ -76,7 +76,8 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         self._custom_effect_color = bool(last.attributes.get(ATTR_CUSTOM_EFFECT_COLOR))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        if not self._attr_is_on:
+        was_on = self._attr_is_on
+        if not was_on:
             await self._device.send(protocol.power(True))
             self._attr_is_on = True
         if ATTR_BRIGHTNESS in kwargs:
@@ -96,7 +97,9 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
             else:
                 self._attr_effect = EFFECT_OFF
                 await self._async_send_color()
-        elif ATTR_BRIGHTNESS in kwargs:
+        elif ATTR_BRIGHTNESS in kwargs or not was_on:
+            # Powering on alone leaves the controller in whatever state it kept,
+            # so the last colour or effect is sent again.
             await (self._async_send_effect() if self._effect_running else self._async_send_color())
         self.async_write_ha_state()
 
