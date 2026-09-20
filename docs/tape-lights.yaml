@@ -91,8 +91,7 @@ api:
     # The controller ignores frames whose sequence number is not newer than the
     # last one it saw. Home Assistant picks a fresh random sequence when it
     # restarts, so it asks for a new link first.
+    # auto_connect brings the link straight back, so dropping it is enough.
     - action: reconnect_strip
       then:
         - ble_client.disconnect: tape
-        - delay: 1s
-        - ble_client.connect: tape

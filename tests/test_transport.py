@@ -22,6 +22,15 @@ def _module(name: str, **attributes) -> types.ModuleType:
     return module
 
 
+TRACKED = []
+
+
+def _track(hass, entity_ids, action):
+    """Stands in for async_track_state_change_event, keeping the callback."""
+    TRACKED.append((entity_ids, action))
+    return lambda: None
+
+
 def _stub_homeassistant() -> None:
     class HomeAssistantError(Exception):
         pass
@@ -65,10 +74,7 @@ def _stub_homeassistant() -> None:
         BluetoothCallbackMatcher=dict,
     )
     _module("homeassistant.helpers")
-    _module(
-        "homeassistant.helpers.event",
-        async_track_state_change_event=lambda hass, entities, action: (lambda: None),
-    )
+    _module("homeassistant.helpers.event", async_track_state_change_event=_track)
 
 
 _stub_homeassistant()
@@ -92,6 +98,11 @@ class FakeServices:
 class FakeHass:
     def __init__(self, available=()):
         self.services = FakeServices(available)
+        self.tasks = []
+
+    def async_create_task(self, coroutine):
+        self.tasks.append(coroutine)
+        return coroutine
 
 
 def test_service_name_uses_underscores():
@@ -144,3 +155,34 @@ def test_transport_choice_follows_the_options():
         hass, _entry({"transport": "esphome"}), "AA:BB", "TAPE LIGHTS"
     )
     assert isinstance(fallback, transport.BleTransport)
+
+
+def _state(value):
+    return types.SimpleNamespace(state=value)
+
+
+def test_the_strip_is_put_back_when_the_link_returns():
+    TRACKED.clear()
+    hass = FakeHass(["tape_lights_reconnect_strip"])
+    esp = transport.EsphomeTransport(
+        hass, "TAPE LIGHTS", "tape-lights", "binary_sensor.bridge"
+    )
+    reapplied = []
+
+    async def _reapply():
+        reapplied.append(True)
+
+    esp.on_reconnect = _reapply
+    asyncio.run(esp.async_start())
+    entity_ids, action = TRACKED[0]
+    assert entity_ids == ["binary_sensor.bridge"]
+
+    action(types.SimpleNamespace(data={"old_state": _state("off"), "new_state": _state("on")}))
+    assert len(hass.tasks) == 1
+    asyncio.run(hass.tasks.pop())
+    assert reapplied == [True]
+
+    # Still on, or gone: nothing to put back.
+    action(types.SimpleNamespace(data={"old_state": _state("on"), "new_state": _state("on")}))
+    action(types.SimpleNamespace(data={"old_state": _state("on"), "new_state": None}))
+    assert hass.tasks == []
