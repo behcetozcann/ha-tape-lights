@@ -107,14 +107,23 @@ DEFAULT_GREEN_BALANCE = 42
 DEFAULT_BLUE_BALANCE = 55
 
 
+GAMMA = 2.2
+
+
 def balance(rgb: tuple[int, int, int], green: int, blue: int) -> tuple[int, int, int]:
-    """Correct the hue without dimming: the brightest channel keeps its level."""
-    scaled = [value * factor for value, factor in zip(rgb, (1.0, green / 100, blue / 100))]
+    """Correct the hue without dimming.
+
+    The correction happens in light intensity (gamma decoded), otherwise
+    pastel colors shift far too much: a light blue would come out pink.
+    The brightest channel keeps its level, so nothing gets dimmer.
+    """
+    linear = [(value / 255) ** GAMMA for value in rgb]
+    scaled = [value * factor for value, factor in zip(linear, (1.0, green / 100, blue / 100))]
     peak = max(scaled)
     if not peak:
         return (0, 0, 0)
-    gain = max(rgb) / peak
-    return tuple(min(255, round(value * gain)) for value in scaled)
+    gain = max(linear) / peak
+    return tuple(min(255, round(255 * (value * gain) ** (1 / GAMMA))) for value in scaled)
 
 
 def power(on: bool) -> tuple[int, list[int]]:
