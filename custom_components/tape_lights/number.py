@@ -19,8 +19,6 @@ async def async_setup_entry(
             TapeLightsSetting(device, "effect_speed", "speed", 1),
             TapeLightsSetting(device, "mic_sensitivity", "mic_sensitivity", 0),
             TapeLightsLedCount(device),
-            TapeLightsSetting(device, "green_balance", "green_balance", 10),
-            TapeLightsSetting(device, "blue_balance", "blue_balance", 10),
         ]
     )
 

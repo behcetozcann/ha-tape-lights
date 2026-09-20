@@ -24,8 +24,6 @@ TEXTS = {
         "wire_order": "Wire color order",
         "second_color": "Effect second color",
         "effect_off": "Off (solid color)",
-        "green_balance": "Green balance",
-        "blue_balance": "Blue balance",
     },
     "tr": {
         "user": "Eklenecek TAPE LIGHTS kontrolcüsünü seçin.",
@@ -39,8 +37,6 @@ TEXTS = {
         "wire_order": "Kablo renk sırası",
         "second_color": "Efekt 2. rengi",
         "effect_off": "Kapalı (düz renk)",
-        "green_balance": "Yeşil dengesi",
-        "blue_balance": "Mavi dengesi",
     },
 }
 
@@ -79,8 +75,6 @@ def build(language: str, effects) -> dict:
                 "effect_speed": {"name": text["effect_speed"]},
                 "mic_sensitivity": {"name": text["mic_sensitivity"]},
                 "led_count": {"name": text["led_count"]},
-                "green_balance": {"name": text["green_balance"]},
-                "blue_balance": {"name": text["blue_balance"]},
             },
             "select": {"wire_order": {"name": text["wire_order"]}},
         },

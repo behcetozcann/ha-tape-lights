@@ -370,12 +370,6 @@
       },
       "led_count": {
         "name": "LED count"
-      },
-      "green_balance": {
-        "name": "Green balance"
-      },
-      "blue_balance": {
-        "name": "Blue balance"
       }
     },
     "select": {

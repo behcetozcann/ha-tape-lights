@@ -370,12 +370,6 @@
       },
       "led_count": {
         "name": "LED sayısı"
-      },
-      "green_balance": {
-        "name": "Yeşil dengesi"
-      },
-      "blue_balance": {
-        "name": "Mavi dengesi"
       }
     },
     "select": {

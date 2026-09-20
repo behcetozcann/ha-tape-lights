@@ -100,38 +100,12 @@ def decode(raw: bytes) -> Frame:
     )
 
 
-# The strip's green and blue LEDs are brighter than the red ones, so a raw mix
-# drifts towards green. These percentages tame them; they are tunable per strip
-# because the balance differs between LED types.
-DEFAULT_GREEN_BALANCE = 42
-DEFAULT_BLUE_BALANCE = 55
-
-
-GAMMA = 2.2
-
-
-def balance(rgb: tuple[int, int, int], green: int, blue: int) -> tuple[int, int, int]:
-    """Correct the hue without dimming.
-
-    The correction happens in light intensity (gamma decoded), otherwise
-    pastel colors shift far too much: a light blue would come out pink.
-    The brightest channel keeps its level, so nothing gets dimmer.
-    """
-    linear = [(value / 255) ** GAMMA for value in rgb]
-    scaled = [value * factor for value, factor in zip(linear, (1.0, green / 100, blue / 100))]
-    peak = max(scaled)
-    if not peak:
-        return (0, 0, 0)
-    gain = max(linear) / peak
-    return tuple(min(255, round(255 * (value * gain) ** (1 / GAMMA))) for value in scaled)
-
-
 def power(on: bool) -> tuple[int, list[int]]:
     return CMD_POWER, [1 if on else 0]
 
 
 def color(red: int, green: int, blue: int, brightness: int = 255) -> tuple[int, list[int]]:
-    """Static color from already balanced channels; the app scales by 0.9 * b + 0.1."""
+    """Static color, sent as picked. The app scales channels by 0.9 * b + 0.1."""
     factor = 0.9 * (max(0, min(255, brightness)) / 255) + 0.1
     scaled = [int(channel * factor) for channel in (red, green, blue)]
     if not any(scaled):
