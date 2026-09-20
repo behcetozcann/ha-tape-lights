@@ -132,7 +132,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         )
 
     async def _async_refresh_effect(self) -> None:
-        """Re-apply the current state after a setting such as a balance changed."""
+        """Re-apply the current state after a setting such as the speed changed."""
         if not self._attr_is_on:
             return
         await (self._async_send_effect() if self._effect_running else self._async_send_color())
