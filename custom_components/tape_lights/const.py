@@ -6,7 +6,13 @@ DEFAULT_NAME = "TAPE LIGHTS"
 DEFAULT_SPEED = 50
 DEFAULT_MIC_SENSITIVITY = 50
 
-# Keep the BLE link for this long after the last command: reconnecting costs
-# seconds, so back to back commands would otherwise queue up and arrive in a
-# burst. The phone app can connect again once the link is dropped.
-IDLE_DISCONNECT_SECONDS = 120
+# Drop the link soon after the last command. The controller only advertises
+# while disconnected and Home Assistant forgets a device that has not
+# advertised for ~195 s, so a long lived link makes it unreachable.
+IDLE_DISCONNECT_SECONDS = 10
+
+# How long to wait for the controller to advertise again before giving up.
+ADVERTISEMENT_WAIT_SECONDS = 30
+
+# Cheap Telink/BK controllers drop the link when writes arrive back to back.
+COMMAND_SETTLE_SECONDS = 0.1

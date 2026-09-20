@@ -14,9 +14,11 @@ type TapeLightsConfigEntry = ConfigEntry[TapeLightsDevice]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: TapeLightsConfigEntry) -> bool:
-    entry.runtime_data = TapeLightsDevice(
+    device = TapeLightsDevice(
         hass, entry.data[CONF_ADDRESS], entry.data.get(CONF_NAME, DEFAULT_NAME)
     )
+    entry.runtime_data = device
+    entry.async_on_unload(device.async_start())
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 

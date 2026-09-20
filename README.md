@@ -75,10 +75,12 @@ Manual install: copy `custom_components/tape_lights` into your
   Bluetooth; a newer command of the same kind replaces a pending one, which
   keeps dragging the color wheel from flooding the controller. Failures are
   logged as warnings instead of failing the service call.
-- Only one Bluetooth connection is possible at a time. The integration keeps
-  the link for 2 minutes after the last command (reconnecting takes seconds,
-  so commands would otherwise queue), then drops it so the phone app can
-  connect again.
+- The controller only advertises while it is disconnected, and Home Assistant
+  forgets a device that has not advertised for about 195 seconds. The link is
+  therefore dropped 10 seconds after the last command; the BLEDevice is kept
+  fresh from advertisements, stale BlueZ links are closed before connecting,
+  and the integration waits for a new advertisement instead of retrying
+  against a device it cannot see.
 - Tested with a Raspberry Pi's built-in adapter; ESPHome Bluetooth proxies
   with `active: true` should work as well.
 
