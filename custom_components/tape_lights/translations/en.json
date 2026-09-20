@@ -356,6 +356,9 @@
             }
           }
         }
+      },
+      "second_color": {
+        "name": "Effect second color"
       }
     },
     "number": {
@@ -372,21 +375,6 @@
     "select": {
       "wire_order": {
         "name": "Wire color order"
-      },
-      "second_color": {
-        "name": "Effect second color",
-        "state": {
-          "auto": "Effect's own color",
-          "red": "Red",
-          "orange": "Orange",
-          "yellow": "Yellow",
-          "green": "Green",
-          "cyan": "Cyan",
-          "blue": "Blue",
-          "purple": "Purple",
-          "pink": "Pink",
-          "white": "White"
-        }
       }
     }
   }

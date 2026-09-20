@@ -16,7 +16,7 @@ enough if the strip is in range.
 | `number` Microphone sensitivity | 0-100, applied in microphone mode |
 | `number` LED count | 100-1024 pixels on the strip (see below) |
 | `select` Wire color order | RGB / RBG / GRB / GBR / BRG / BGR |
-| `select` Effect second color | second color of two color effects, or the effect's own color |
+| `light` Effect second color | color wheel for the second color of two color effects |
 
 Effect families (same order and numbering as the app):
 
@@ -31,8 +31,10 @@ Effect families (same order and numbering as the app):
 | Microphone | sound reactive, uses the mic on the controller |
 
 **Effect colors:** an effect starts with its own palette colors. Pick a color
-while it runs and the effect keeps running in that color; *Effect second
-color* recolors the second half of two color effects. Rainbow styles ignore
+while it runs and the effect keeps running in that color. The separate
+*Effect second color* light is a color wheel for the second color of two
+color effects; switch it off to get the effect's own second color back (it
+does not switch the strip itself). Rainbow styles ignore
 custom colors. Choose the effect **Off** to go back to a solid color.
 
 Effect names are translated (English, Turkish). In automations and service
@@ -114,7 +116,8 @@ yönetir: aç/kapa, renk, parlaklık, 328 efekt (Türkçe adlarla) ve cihazın
 kendi mikrofonuyla sese duyarlı mod. Şerit parça parça farklı renkte yanıyorsa
 **LED sayısı** ayarını şeridin gerçek LED sayısına getirin (ör. 5 m × 60 = 300).
 Efekt çalışırken renk seçerseniz efekt o renkte devam eder; iki renkli efektlerde
-ikinci renk için **Efekt 2. rengi** ayarını kullanın, düz renge dönmek için
+ikinci renk için **Efekt 2. rengi** ışığını kullanın (kapatınca efekt kendi
+rengine döner), düz renge dönmek için
 **Kapalı** efektini seçin. Kurulum için yukarıdaki HACS adımlarını izleyin; kurulumdan
 önce Rhythm Pro uygulamasını kapatın.
 

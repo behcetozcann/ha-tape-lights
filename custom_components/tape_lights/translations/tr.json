@@ -356,6 +356,9 @@
             }
           }
         }
+      },
+      "second_color": {
+        "name": "Efekt 2. rengi"
       }
     },
     "number": {
@@ -372,21 +375,6 @@
     "select": {
       "wire_order": {
         "name": "Kablo renk sırası"
-      },
-      "second_color": {
-        "name": "Efekt 2. rengi",
-        "state": {
-          "auto": "Efektin kendi rengi",
-          "red": "Kırmızı",
-          "orange": "Turuncu",
-          "yellow": "Sarı",
-          "green": "Yeşil",
-          "cyan": "Camgöbeği",
-          "blue": "Mavi",
-          "purple": "Mor",
-          "pink": "Pembe",
-          "white": "Beyaz"
-        }
       }
     }
   }

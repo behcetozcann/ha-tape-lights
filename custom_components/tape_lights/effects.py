@@ -109,29 +109,6 @@ def _split_rgb(value: int) -> list[int]:
     return [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF]
 
 
-# Choices for the second effect color; "auto" keeps the style's own color.
-SECOND_COLORS = {
-    "auto": None,
-    "red": 0xFF0000,
-    "orange": 0xFF6000,
-    "yellow": 0xFFFF00,
-    "green": 0x00FF00,
-    "cyan": 0x00FFFF,
-    "blue": 0x0000FF,
-    "purple": 0x8000FF,
-    "pink": 0xFF00FF,
-    "white": 0xFFFFFF,
-}
-SECOND_COLOR_NAMES = {
-    "en": {"auto": "Effect's own color", "red": "Red", "orange": "Orange", "yellow": "Yellow",
-           "green": "Green", "cyan": "Cyan", "blue": "Blue", "purple": "Purple", "pink": "Pink",
-           "white": "White"},
-    "tr": {"auto": "Efektin kendi rengi", "red": "Kırmızı", "orange": "Turuncu", "yellow": "Sarı",
-           "green": "Yeşil", "cyan": "Camgöbeği", "blue": "Mavi", "purple": "Mor", "pink": "Pembe",
-           "white": "Beyaz"},
-}
-
-
 def rgb_to_int(rgb: tuple[int, int, int]) -> int:
     return (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]
 

@@ -68,17 +68,15 @@ def build(language: str, effects) -> dict:
                     "state_attributes": {
                         "effect": {"state": {"off": text["effect_off"], **effects.effect_names(language)}}
                     }
-                }
+                },
+                "second_color": {"name": text["second_color"]},
             },
             "number": {
                 "effect_speed": {"name": text["effect_speed"]},
                 "mic_sensitivity": {"name": text["mic_sensitivity"]},
                 "led_count": {"name": text["led_count"]},
             },
-            "select": {
-                "wire_order": {"name": text["wire_order"]},
-                "second_color": {"name": text["second_color"], "state": effects.SECOND_COLOR_NAMES[language]},
-            },
+            "select": {"wire_order": {"name": text["wire_order"]}},
         },
     }
 

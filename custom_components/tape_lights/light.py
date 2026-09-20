@@ -18,7 +18,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import TapeLightsConfigEntry, protocol
-from .effects import MIC_EFFECT, SECOND_COLORS, effect_command, effect_list, rgb_to_int
+from .effects import MIC_EFFECT, effect_command, effect_list, rgb_to_int
 from .entity import TapeLightsEntity
 
 ATTR_CUSTOM_EFFECT_COLOR = "custom_effect_color"
@@ -27,7 +27,8 @@ ATTR_CUSTOM_EFFECT_COLOR = "custom_effect_color"
 async def async_setup_entry(
     hass: HomeAssistant, entry: TapeLightsConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
-    async_add_entities([TapeLightsLight(entry.runtime_data)])
+    device = entry.runtime_data
+    async_add_entities([TapeLightsLight(device), TapeLightsSecondColor(device)])
 
 
 class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
@@ -119,7 +120,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
                 self._device.speed,
                 self._attr_brightness,
                 first_color=first,
-                second_color=SECOND_COLORS.get(self._device.second_color),
+                second_color=self._device.second_color,
             )
         )
 
@@ -128,3 +129,49 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         if self._attr_is_on and self._effect_running:
             await self._async_send_effect()
             self.async_write_ha_state()
+
+
+class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
+    """Color wheel for the second color of two color effects.
+
+    Turning it off gives the effect its own second color back. It does not
+    switch the strip itself on or off.
+    """
+
+    _attr_translation_key = "second_color"
+    _attr_assumed_state = True
+    _attr_color_mode = ColorMode.RGB
+    _attr_supported_color_modes = {ColorMode.RGB}
+    _attr_brightness = 255
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "second_color")
+        self._attr_is_on = False
+        self._attr_rgb_color = (0, 0, 255)
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (last := await self.async_get_last_state()) is None:
+            return
+        if rgb := last.attributes.get(ATTR_RGB_COLOR):
+            self._attr_rgb_color = tuple(rgb)
+        if last.state == STATE_ON:
+            self._attr_is_on = True
+            self._device.second_color = rgb_to_int(self._attr_rgb_color)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        if ATTR_RGB_COLOR in kwargs:
+            self._attr_rgb_color = kwargs[ATTR_RGB_COLOR]
+        self._attr_is_on = True
+        self._device.second_color = rgb_to_int(self._attr_rgb_color)
+        await self._apply()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        self._attr_is_on = False
+        self._device.second_color = None
+        await self._apply()
+
+    async def _apply(self) -> None:
+        if self._device.refresh_effect:
+            await self._device.refresh_effect()
+        self.async_write_ha_state()
