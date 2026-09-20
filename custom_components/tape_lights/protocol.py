@@ -100,6 +100,22 @@ def decode(raw: bytes) -> Frame:
     )
 
 
+# The strip's green and blue LEDs are brighter than the red ones, so an
+# unbalanced mix drifts towards green. These factors bring mixed colors back
+# in line with what the colour picker shows; pure colors are unaffected.
+CHANNEL_BALANCE = (1.0, 0.42, 0.75)
+
+
+def balance(rgb: tuple[int, int, int]) -> tuple[int, int, int]:
+    """Correct the hue without dimming: the brightest channel keeps its level."""
+    scaled = [value * factor for value, factor in zip(rgb, CHANNEL_BALANCE)]
+    peak = max(scaled)
+    if not peak:
+        return (0, 0, 0)
+    gain = max(rgb) / peak
+    return tuple(min(255, round(value * gain)) for value in scaled)
+
+
 def power(on: bool) -> tuple[int, list[int]]:
     return CMD_POWER, [1 if on else 0]
 
@@ -107,7 +123,7 @@ def power(on: bool) -> tuple[int, list[int]]:
 def color(red: int, green: int, blue: int, brightness: int = 255) -> tuple[int, list[int]]:
     """Static color. The app scales channels by 0.9 * brightness + 0.1."""
     factor = 0.9 * (max(0, min(255, brightness)) / 255) + 0.1
-    scaled = [int(channel * factor) for channel in (red, green, blue)]
+    scaled = [int(channel * factor) for channel in balance((red, green, blue))]
     if not any(scaled):
         scaled = [1, 1, 1]
     return CMD_COLOR, scaled

@@ -113,7 +113,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
             await self._device.send(protocol.mic_mode(0))
             await self._device.send(protocol.mic_sensitivity(self._device.mic_sensitivity))
             return
-        first = rgb_to_int(self._attr_rgb_color) if self._custom_effect_color else None
+        first = rgb_to_int(protocol.balance(self._attr_rgb_color)) if self._custom_effect_color else None
         await self._device.send(
             effect_command(
                 self._attr_effect,
@@ -157,13 +157,13 @@ class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
             self._attr_rgb_color = tuple(rgb)
         if last.state == STATE_ON:
             self._attr_is_on = True
-            self._device.second_color = rgb_to_int(self._attr_rgb_color)
+            self._device.second_color = rgb_to_int(protocol.balance(self._attr_rgb_color))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         if ATTR_RGB_COLOR in kwargs:
             self._attr_rgb_color = kwargs[ATTR_RGB_COLOR]
         self._attr_is_on = True
-        self._device.second_color = rgb_to_int(self._attr_rgb_color)
+        self._device.second_color = rgb_to_int(protocol.balance(self._attr_rgb_color))
         await self._apply()
 
     async def async_turn_off(self, **kwargs: Any) -> None:

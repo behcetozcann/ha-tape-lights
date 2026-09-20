@@ -96,3 +96,13 @@ def test_custom_colors_replace_palette_colors():
 
 def test_custom_color_ignored_by_rainbow_styles():
     assert effects.effect_command("open_close_1", 50, 255, first_color=0xFF6000)[1][2:8] == [0] * 6
+
+
+@pytest.mark.parametrize("pure", [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 0, 0)])
+def test_balance_keeps_pure_colors(pure):
+    assert protocol.balance(pure) == pure
+
+
+def test_balance_tames_green_in_mixes_without_dimming():
+    balanced = protocol.balance((255, 96, 0))
+    assert balanced[0] == 255 and balanced[1] < 96

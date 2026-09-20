@@ -43,6 +43,13 @@ calls use the effect key, e.g. `effect: water_20`, `open_close_1`, `microphone`.
 The controller never reports its state, so the entity uses an assumed state
 that is restored after a restart.
 
+### Colors
+
+The strip's green and blue LEDs are brighter than the red ones, so a raw RGB
+mix drifts towards green. Colors are balanced before they are sent
+(`CHANNEL_BALANCE` in `protocol.py`) so that the strip matches the color
+picker; pure red, green and blue are sent unchanged.
+
 ### LED count and wire order
 
 The controller has to know how many pixels the strip has. If the LED count is
