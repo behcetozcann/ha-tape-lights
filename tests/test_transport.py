@@ -50,7 +50,14 @@ def _stub_homeassistant() -> None:
     )
     _module("homeassistant")
     _module("homeassistant.core", HomeAssistant=object, callback=lambda func: func)
-    _module("homeassistant.exceptions", HomeAssistantError=HomeAssistantError)
+    class ConfigEntryNotReady(HomeAssistantError):
+        pass
+
+    _module(
+        "homeassistant.exceptions",
+        HomeAssistantError=HomeAssistantError,
+        ConfigEntryNotReady=ConfigEntryNotReady,
+    )
     _module(
         "homeassistant.const",
         CONF_ADDRESS="address",
@@ -87,12 +94,15 @@ class FakeServices:
     def __init__(self, available):
         self._available = set(available)
         self.calls = []
+        self.fail_with = None
 
     def has_service(self, domain, service):
         return service in self._available
 
     async def async_call(self, domain, service, data, blocking=False):
         self.calls.append((domain, service, data, blocking))
+        if self.fail_with:
+            raise self.fail_with
 
 
 class FakeHass:
@@ -125,12 +135,24 @@ def test_send_without_the_esp32_raises():
         asyncio.run(esp.async_send(b"\x00"))
 
 
-def test_start_asks_for_a_fresh_link_and_survives_an_offline_esp32():
+def test_start_asks_for_a_fresh_link():
     hass = FakeHass(["tape_lights_reconnect_strip"])
     esp = transport.EsphomeTransport(hass, "TAPE LIGHTS", "tape-lights")
     asyncio.run(esp.async_start())
     assert hass.services.calls[0][1] == "tape_lights_reconnect_strip"
-    asyncio.run(transport.EsphomeTransport(FakeHass(), "TAPE LIGHTS", "x").async_start())
+
+
+def test_start_is_retried_while_the_esp32_is_offline():
+    """After a power cut Home Assistant can start before the ESP32 is back."""
+    missing = transport.EsphomeTransport(FakeHass(), "TAPE LIGHTS", "x")
+    with pytest.raises(transport.ConfigEntryNotReady):
+        asyncio.run(missing.async_start())
+
+    hass = FakeHass(["tape_lights_reconnect_strip"])
+    hass.services.fail_with = HomeAssistantError("connection not ready yet")
+    not_ready = transport.EsphomeTransport(hass, "TAPE LIGHTS", "tape-lights")
+    with pytest.raises(transport.ConfigEntryNotReady):
+        asyncio.run(not_ready.async_start())
 
 
 def _entry(options):

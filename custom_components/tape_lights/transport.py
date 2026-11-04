@@ -25,7 +25,7 @@ from homeassistant.components.bluetooth.match import ADDRESS, BluetoothCallbackM
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers.event import async_track_state_change_event
 
 from . import protocol
@@ -82,8 +82,13 @@ class EsphomeTransport(Transport):
     async def async_start(self) -> None:
         # Home Assistant picks a new random sequence number when it restarts and
         # the controller ignores frames that are not newer than the last one it
-        # saw, so the link is rebuilt first.
-        await self._async_call(f"{self._slug}_reconnect_strip", {}, required=False)
+        # saw, so the link is rebuilt first. After a power cut Home Assistant
+        # often starts before the ESP32 is back; setup is then retried instead
+        # of failing for good and leaving the light unavailable until a reload.
+        try:
+            await self._async_call(f"{self._slug}_reconnect_strip", {})
+        except HomeAssistantError as err:
+            raise ConfigEntryNotReady(str(err)) from err
         self._unsubscribe = self._track_connection()
 
     async def async_send(self, frame: bytes) -> None:
@@ -94,16 +99,12 @@ class EsphomeTransport(Transport):
             self._unsubscribe()
             self._unsubscribe = None
 
-    async def _async_call(self, service: str, data: dict, required: bool = True) -> None:
+    async def _async_call(self, service: str, data: dict) -> None:
         if not self.hass.services.has_service(ESPHOME_DOMAIN, service):
-            message = (
+            raise HomeAssistantError(
                 f"{self.name}: {ESPHOME_DOMAIN}.{service} is missing; "
                 f"is the {self.node} ESP32 online?"
             )
-            if required:
-                raise HomeAssistantError(message)
-            _LOGGER.warning("%s", message)
-            return
         await self.hass.services.async_call(ESPHOME_DOMAIN, service, data, blocking=True)
 
     def _track_connection(self) -> Callable[[], None] | None:
