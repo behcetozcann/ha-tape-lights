@@ -56,6 +56,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         self._attr_effect = EFFECT_OFF
         self._custom_effect_color = False
         device.refresh_effect = self._async_refresh_effect
+        device.restore_state = self._async_restore_state
 
     @property
     def _effect_running(self) -> bool:
@@ -132,6 +133,18 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
                 second_color=self._device.second_color,
             )
         )
+
+    async def _async_restore_state(self) -> None:
+        """Called when the link returns, e.g. after a power cut.
+
+        The controller has no power-on setting and always comes back lit, so a
+        strip Home Assistant believes is off is switched off again.
+        """
+        if not self._attr_is_on:
+            self._device.queue(protocol.power(False))
+            return
+        self._device.queue(protocol.power(True))
+        await self._async_refresh_effect()
 
     async def _async_refresh_effect(self) -> None:
         """Re-apply the current state after a setting such as the speed changed."""

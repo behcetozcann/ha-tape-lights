@@ -31,6 +31,9 @@ class TapeLightsDevice:
         self.second_color: int | None = None  # effect second color, None = its own
         # Set by the light entity; other entities call it to re-apply settings.
         self.refresh_effect: Callable[[], Awaitable[None]] | None = None
+        # Set by the light entity; restores power, colour and effect after the
+        # link returns (the controller powers up lit after a power cut).
+        self.restore_state: Callable[[], Awaitable[None]] | None = None
         self._write_lock = asyncio.Lock()
         # The controller ignores frames whose sequence number is not newer than
         # the last one it saw, so starting from 0 after a restart silently
@@ -73,8 +76,8 @@ class TapeLightsDevice:
 
     async def async_reapply(self) -> None:
         """Put the strip back in the state Home Assistant believes it is in."""
-        if self.refresh_effect:
-            await self.refresh_effect()
+        if self.restore_state:
+            await self.restore_state()
 
     async def async_shutdown(self) -> None:
         self._pending.clear()
