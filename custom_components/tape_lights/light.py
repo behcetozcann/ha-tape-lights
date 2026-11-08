@@ -21,7 +21,6 @@ from . import TapeLightsConfigEntry, protocol
 from .effects import MIC_EFFECT, effect_color_slots, effect_command, effect_list, rgb_to_int
 from .entity import TapeLightsEntity
 
-ATTR_CUSTOM_EFFECT_COLOR = "custom_effect_color"
 ATTR_EFFECT_FIRST_COLOR = "effect_takes_first_color"
 ATTR_EFFECT_SECOND_COLOR = "effect_takes_second_color"
 
@@ -36,8 +35,9 @@ async def async_setup_entry(
 class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
     """The controller does not report state, so it is assumed and restored.
 
-    Picking a color while an effect runs recolors the effect instead of
-    stopping it; the "off" effect returns to a solid color.
+    The color wheel sets the first color of effects too, so picking a color
+    while an effect runs recolors it and the next effect keeps that color; the
+    "off" effect returns to a solid color.
     """
 
     _attr_name = None
@@ -56,7 +56,6 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
         self._attr_brightness = 255
         self._attr_rgb_color = (255, 255, 255)
         self._attr_effect = EFFECT_OFF
-        self._custom_effect_color = False
         device.refresh_effect = self._async_refresh_effect
         device.restore_state = self._async_restore_state
 
@@ -68,7 +67,6 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         takes_first, takes_second = effect_color_slots(self._attr_effect)
         return {
-            ATTR_CUSTOM_EFFECT_COLOR: self._custom_effect_color,
             ATTR_EFFECT_FIRST_COLOR: takes_first,
             ATTR_EFFECT_SECOND_COLOR: takes_second,
         }
@@ -90,7 +88,6 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
             self._attr_rgb_color = tuple(rgb)
         if (effect := last.attributes.get(ATTR_EFFECT)) in self._attr_effect_list:
             self._attr_effect = effect
-        self._custom_effect_color = bool(last.attributes.get(ATTR_CUSTOM_EFFECT_COLOR))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         was_on = self._attr_is_on
@@ -106,12 +103,9 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
 
         if ATTR_EFFECT in kwargs:
             self._attr_effect = kwargs[ATTR_EFFECT]
-            # A new effect starts with its own colors unless a color came with it.
-            self._custom_effect_color = ATTR_RGB_COLOR in kwargs
             await (self._async_send_effect() if self._effect_running else self._async_send_color())
         elif ATTR_RGB_COLOR in kwargs:
             if self._effect_running and self._attr_effect != MIC_EFFECT:
-                self._custom_effect_color = True
                 await self._async_send_effect()
             else:
                 self._attr_effect = EFFECT_OFF
@@ -137,13 +131,12 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
             self._device.queue(protocol.mic_mode(0))
             self._device.queue(protocol.mic_sensitivity(self._device.mic_sensitivity))
             return
-        first = rgb_to_int(self._attr_rgb_color) if self._custom_effect_color else None
         self._device.queue(
             effect_command(
                 self._attr_effect,
                 self._device.speed,
                 self._attr_brightness,
-                first_color=first,
+                first_color=rgb_to_int(self._attr_rgb_color),
                 second_color=self._device.second_color,
             )
         )

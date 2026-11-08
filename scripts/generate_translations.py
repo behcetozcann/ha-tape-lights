@@ -1,6 +1,6 @@
 """Regenerate strings.json and translations/*.json.
 
-Effect names come from effects.CATEGORIES, so the 329 effect labels never
+Effect names come from effects.CATEGORIES, so the effect labels never
 drift from the effect list. Run after changing texts or effects:
 
     python scripts/generate_translations.py

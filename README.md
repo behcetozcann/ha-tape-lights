@@ -13,7 +13,7 @@ reliable setup.
 | Entity | What it does |
 |---|---|
 | `light` | on / off, RGB color, brightness |
-| `light` effects | 328 app effects in 6 families + the controller's built-in microphone mode |
+| `light` effects | 34 animations in 6 families + the controller's built-in microphone mode |
 | `number` Effect speed | 1-100, applied to the running effect |
 | `number` Microphone sensitivity | 0-100, applied in microphone mode |
 | `number` LED count | 100-1024 pixels on the strip (see below) |
@@ -32,15 +32,16 @@ Effect families (same order and numbering as the app):
 | Run | 98 |
 | Microphone | sound reactive, uses the mic on the controller |
 
-**Effect colors:** an effect starts with its own palette colors. Pick a color
-while it runs and the effect keeps running in that color. The separate
-*Effect second color* light is a color wheel for the second color of two
-color effects; switch it off to get the effect's own second color back (it
-does not switch the strip itself). Rainbow styles ignore
-custom colors. Choose the effect **Off** to go back to a solid color.
+**Effect colors:** the app lists 328 effects, but most only repeat the same
+animation in other colors, so each animation appears once and its name says
+what can be colored. The main color wheel sets the first color and the
+separate *Effect second color* light sets the second one (it does not switch
+the strip itself and is unavailable on effects without a second color).
+Preset color styles ignore both. Choose the effect **Off** to go back to a
+solid color.
 
 Effect names are translated (English, Turkish). In automations and service
-calls use the effect key, e.g. `effect: water_20`, `open_close_1`, `microphone`.
+calls use the effect key, e.g. `effect: water_7`, `open_close_1`, `microphone`.
 
 The controller never reports its state, so the entity uses an assumed state
 that is restored after a restart.

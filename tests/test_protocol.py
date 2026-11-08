@@ -50,10 +50,12 @@ def test_encode_decode_roundtrip(params):
     assert frame.params[: min(8, len(params))] == params[:8]
 
 
-def test_effect_catalogue_size_matches_app():
+def test_effect_list_has_one_entry_per_animation():
     names = effects.effect_list()
-    assert len(names) == 328 + 1
+    assert len(names) == 34 + 1
     assert len(set(names)) == len(names)
+    assert {"water_7", "water_8", "run_15", "run_16", "flow_1", "flow_2"} <= set(names)
+    assert "water_20" not in names
 
 
 def test_open_close_1_matches_verified_frame():

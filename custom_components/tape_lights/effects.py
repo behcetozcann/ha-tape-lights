@@ -62,44 +62,42 @@ CATEGORIES = (
 )
 
 
+def _distinct_styles(count: int, formula) -> list[int]:
+    """One style per animation; the app's other styles only repeat it in other colors."""
+    first_style: dict[tuple[int, int], int] = {}
+    for style in range(count):
+        first_style.setdefault((formula(style)[0], style & 1), style)
+    return list(first_style.values())
+
+
 def effect_list() -> list[str]:
-    """Effect keys such as "water_20"; display names come from translations."""
-    keys = [f"{key}_{style + 1}" for key, _, _, count, _ in CATEGORIES for style in range(count)]
+    """Effect keys such as "water_7"; display names come from translations."""
+    keys = [
+        f"{key}_{style + 1}"
+        for key, _, _, count, formula in CATEGORIES
+        for style in _distinct_styles(count, formula)
+    ]
     return [*keys, MIC_EFFECT]
 
 
-COLOR_NAMES = {
-    0xFF0000: {"en": "Red", "tr": "Kırmızı"},
-    0x00FF00: {"en": "Green", "tr": "Yeşil"},
-    0x0000FF: {"en": "Blue", "tr": "Mavi"},
-    0xFFFF00: {"en": "Yellow", "tr": "Sarı"},
-    0x00FFFF: {"en": "Cyan", "tr": "Camgöbeği"},
-    0xFF00FF: {"en": "Magenta", "tr": "Pembe"},
-    0xFFFFFF: {"en": "White", "tr": "Beyaz"},
-    0x800000: {"en": "Dark red", "tr": "Koyu Kırmızı"},
-    0x008000: {"en": "Dark green", "tr": "Koyu Yeşil"},
-    0x000080: {"en": "Navy", "tr": "Lacivert"},
-    0x808000: {"en": "Olive", "tr": "Zeytin"},
-    0x008080: {"en": "Teal", "tr": "Koyu Camgöbeği"},
-    0x800080: {"en": "Purple", "tr": "Mor"},
-    0x808080: {"en": "Gray", "tr": "Gri"},
+SLOT_LABELS = {
+    "en": ("Preset colors", "One color", "Two colors"),
+    "tr": ("Hazır renkler", "Tek renk", "İki renk"),
 }
 
 
-def _display_name(label: str, style: int, formula, language: str) -> str:
-    """"Water 20 · Green & Red"; styles without palette colors keep only the number."""
+def _display_name(label: str, number: int, style: int, formula, language: str) -> str:
+    """"Water 7 · Two colors": what the color wheels can change on this effect."""
     _, color_a, color_b = formula(style)
-    colors = [COLOR_NAMES[color][language] for color in (color_a, color_b) if color]
-    base = f"{label} {style + 1}"
-    return f"{base} · {' & '.join(colors)}" if colors else base
+    return f"{label} {number} · {SLOT_LABELS[language][bool(color_a) + bool(color_b)]}"
 
 
 def effect_names(language: str) -> dict[str, str]:
     """Key -> display name for one language, used to generate translations."""
     names = {
-        f"{key}_{style + 1}": _display_name(labels[language], style, formula, language)
+        f"{key}_{style + 1}": _display_name(labels[language], number, style, formula, language)
         for key, labels, _, count, formula in CATEGORIES
-        for style in range(count)
+        for number, style in enumerate(_distinct_styles(count, formula), start=1)
     }
     names[MIC_EFFECT] = MIC_NAMES[language]
     return names
