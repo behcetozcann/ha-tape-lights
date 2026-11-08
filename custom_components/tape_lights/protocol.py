@@ -105,7 +105,7 @@ def power(on: bool) -> tuple[int, list[int]]:
 
 
 def color(red: int, green: int, blue: int, brightness: int = 255) -> tuple[int, list[int]]:
-    """Static color, sent as picked. The app scales channels by 0.9 * b + 0.1."""
+    """Static color. The app scales channels by 0.9 * b + 0.1."""
     factor = 0.9 * (max(0, min(255, brightness)) / 255) + 0.1
     scaled = [int(channel * factor) for channel in (red, green, blue)]
     if not any(scaled):

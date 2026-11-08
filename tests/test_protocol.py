@@ -18,6 +18,7 @@ def _load(name):
 
 protocol = _load("protocol")
 effects = _load("effects")
+calibration = _load("calibration")
 
 VERIFIED_ON_DEVICE = {
     "power off": ("27c3b2f813875307624fc460219079bc0b", 0x10, [0]),
@@ -111,3 +112,26 @@ def test_effect_color_slots():
     assert effect_color_slots("off") == (False, False)
     assert effect_color_slots(None) == (False, False)
     assert effect_color_slots("water_91") == (False, False)
+
+
+@pytest.mark.parametrize(
+    "picked, sent",
+    [
+        ((255, 0, 0), (255, 0, 0)),
+        ((255, 128, 0), (255, 15, 0)),
+        ((255, 255, 0), (255, 90, 0)),
+        ((0, 255, 0), (0, 255, 0)),
+        ((0, 255, 255), (255, 255, 255)),
+        ((0, 0, 255), (0, 0, 255)),
+        ((255, 255, 255), (255, 232, 226)),
+        ((0, 0, 0), (0, 0, 0)),
+    ],
+)
+def test_calibration_hits_measured_colors(picked, sent):
+    result = calibration.calibrate(picked)
+    assert all(abs(got - want) <= 1 for got, want in zip(result, sent))
+
+
+def test_calibration_keeps_brightness_and_closes_the_wheel():
+    assert calibration.calibrate((128, 128, 0)) == tuple(round(c * 128 / 255) for c in (255, 90, 0))
+    assert calibration.calibrate((255, 0, 9))[0] == 255

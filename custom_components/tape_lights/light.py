@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoredExtraData, RestoreEntity
 
 from . import TapeLightsConfigEntry, protocol
+from .calibration import calibrate
 from .effects import MIC_EFFECT, effect_color_slots, effect_command, effect_list, rgb_to_int
 from .entity import TapeLightsEntity
 
@@ -123,7 +124,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
 
     async def _async_send_color(self) -> None:
         self._device.queue(
-            protocol.color(*self._attr_rgb_color, self._attr_brightness)
+            protocol.color(*calibrate(self._attr_rgb_color), self._attr_brightness)
         )
 
     async def _async_send_effect(self) -> None:
@@ -136,7 +137,7 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
                 self._attr_effect,
                 self._device.speed,
                 self._attr_brightness,
-                first_color=rgb_to_int(self._attr_rgb_color),
+                first_color=rgb_to_int(calibrate(self._attr_rgb_color)),
                 second_color=self._device.second_color,
             )
         )
@@ -225,7 +226,7 @@ class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
         await self._apply()
 
     def _update_second_color(self) -> None:
-        self._device.second_color = rgb_to_int(self._attr_rgb_color)
+        self._device.second_color = rgb_to_int(calibrate(self._attr_rgb_color))
 
     async def _apply(self) -> None:
         if self._device.second_color is not None:

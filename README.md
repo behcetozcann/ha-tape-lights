@@ -32,6 +32,11 @@ Effect families (same order and numbering as the app):
 | Run | 98 |
 | Microphone | sound reactive, uses the mic on the controller |
 
+**Color calibration:** picked colors are mapped to values measured on one
+strip by eye ([`calibration.py`](custom_components/tape_lights/calibration.py)),
+because raw yellow looked green and raw white looked cyan there. Effects with
+preset colors are not affected.
+
 **Effect colors:** the app lists 328 effects, but most only repeat the same
 animation in other colors, so each animation appears once and its name says
 what can be colored. The main color wheel sets the first color and the
