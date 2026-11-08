@@ -15,13 +15,15 @@ from homeassistant.components.light import (
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.restore_state import RestoredExtraData, RestoreEntity
 
 from . import TapeLightsConfigEntry, protocol
-from .effects import MIC_EFFECT, effect_command, effect_list, rgb_to_int
+from .effects import MIC_EFFECT, effect_color_slots, effect_command, effect_list, rgb_to_int
 from .entity import TapeLightsEntity
 
 ATTR_CUSTOM_EFFECT_COLOR = "custom_effect_color"
+ATTR_EFFECT_FIRST_COLOR = "effect_takes_first_color"
+ATTR_EFFECT_SECOND_COLOR = "effect_takes_second_color"
 
 
 async def async_setup_entry(
@@ -64,7 +66,19 @@ class TapeLightsLight(TapeLightsEntity, LightEntity, RestoreEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {ATTR_CUSTOM_EFFECT_COLOR: self._custom_effect_color}
+        takes_first, takes_second = effect_color_slots(self._attr_effect)
+        return {
+            ATTR_CUSTOM_EFFECT_COLOR: self._custom_effect_color,
+            ATTR_EFFECT_FIRST_COLOR: takes_first,
+            ATTR_EFFECT_SECOND_COLOR: takes_second,
+        }
+
+    def async_write_ha_state(self) -> None:
+        super().async_write_ha_state()
+        if self._device.effect != self._attr_effect:
+            self._device.effect = self._attr_effect
+            if self._device.on_effect_change:
+                self._device.on_effect_change()
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -158,7 +172,8 @@ class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
     """Color wheel for the second color of two color effects.
 
     Turning it off gives the effect its own second color back. It does not
-    switch the strip itself on or off.
+    switch the strip itself on or off. It is unavailable while the running
+    effect has no second color, where a picked color would change nothing.
     """
 
     _attr_translation_key = "second_color"
@@ -172,15 +187,37 @@ class TapeLightsSecondColor(TapeLightsEntity, LightEntity, RestoreEntity):
         self._attr_is_on = False
         self._attr_rgb_color = (0, 0, 255)
 
+    @property
+    def available(self) -> bool:
+        return effect_color_slots(self._device.effect)[1]
+
+    @property
+    def extra_restore_state_data(self) -> RestoredExtraData:
+        # An unavailable state is stored without attributes, so the color and
+        # on/off are kept here as well.
+        return RestoredExtraData({"is_on": self._attr_is_on, "rgb_color": list(self._attr_rgb_color)})
+
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        if (last := await self.async_get_last_state()) is None:
+        self._device.on_effect_change = self._on_effect_change
+        if extra := await self.async_get_last_extra_data():
+            saved = extra.as_dict()
+            is_on, rgb = saved.get("is_on"), saved.get("rgb_color")
+        elif last := await self.async_get_last_state():
+            is_on, rgb = last.state == STATE_ON, last.attributes.get(ATTR_RGB_COLOR)
+        else:
             return
-        if rgb := last.attributes.get(ATTR_RGB_COLOR):
+        if rgb:
             self._attr_rgb_color = tuple(rgb)
-        if last.state == STATE_ON:
+        if is_on:
             self._attr_is_on = True
             self._update_second_color()
+
+    async def async_will_remove_from_hass(self) -> None:
+        self._device.on_effect_change = None
+
+    def _on_effect_change(self) -> None:
+        self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         if ATTR_RGB_COLOR in kwargs:

@@ -105,6 +105,20 @@ def effect_names(language: str) -> dict[str, str]:
     return names
 
 
+def effect_color_slots(effect: str | None) -> tuple[bool, bool]:
+    """Whether an effect has a first and a second color that can be replaced.
+
+    Rainbow styles have neither and single color styles only the first, so a
+    picked color would otherwise be ignored without any sign.
+    """
+    name, _, number = (effect or "").rpartition("_")
+    for category, _, _, count, formula in CATEGORIES:
+        if category == name and number.isdigit() and 0 < int(number) <= count:
+            _, color_a, color_b = formula(int(number) - 1)
+            return bool(color_a), bool(color_b)
+    return False, False
+
+
 def _split_rgb(value: int) -> list[int]:
     return [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF]
 

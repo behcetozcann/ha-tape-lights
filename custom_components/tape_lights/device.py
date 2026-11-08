@@ -29,6 +29,9 @@ class TapeLightsDevice:
         self.speed = DEFAULT_SPEED
         self.mic_sensitivity = DEFAULT_MIC_SENSITIVITY
         self.second_color: int | None = None  # effect second color, None = its own
+        self.effect: str | None = None  # running effect, kept by the light entity
+        # Set by the second color entity; called when the running effect changes.
+        self.on_effect_change: Callable[[], None] | None = None
         # Set by the light entity; other entities call it to re-apply settings.
         self.refresh_effect: Callable[[], Awaitable[None]] | None = None
         # Set by the light entity; restores power, colour and effect after the

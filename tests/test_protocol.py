@@ -96,3 +96,16 @@ def test_custom_colors_replace_palette_colors():
 
 def test_custom_color_ignored_by_rainbow_styles():
     assert effects.effect_command("open_close_1", 50, 255, first_color=0xFF6000)[1][2:8] == [0] * 6
+
+
+def test_effect_color_slots():
+    effect_color_slots = effects.effect_color_slots
+    assert effect_color_slots("open_close_6") == (False, False)  # rainbow
+    assert effect_color_slots("open_close_7") == (True, False)  # one color
+    assert effect_color_slots("water_20") == (True, True)  # Green & Red
+    assert effect_color_slots("flow_1") == (True, True)
+    assert effect_color_slots("run_1") == (True, False)
+    assert effect_color_slots("microphone") == (False, False)
+    assert effect_color_slots("off") == (False, False)
+    assert effect_color_slots(None) == (False, False)
+    assert effect_color_slots("water_91") == (False, False)
